@@ -1,49 +1,38 @@
 program main
+    use mod_matrix_c8
     use debugger
     implicit none
-    logical :: debug_mode
-    real(8) :: a, b, c
+    ! This program tests the functionality of the complex8_matrix derived type
+    ! defined in the mod_matrix_c8 module. It initializes matrices, computes
+    ! their trace and adjoint, and writes the adjoint matrix to a file.
 
-    ! Enable debug mode
-    debug_mode = .TRUE.
-    a = 1.234
-    b = 5.678
-    c = 9.101
+    type(complex8_matrix) :: A, B, C      ! Declare matrices A, B, and C
+    complex(8) :: trace_B, trace_A         ! Variable to store the trace
+    integer :: rows, cols                  ! Matrix dimensions
+    logical :: debug
+    type(complex8_matrix) :: A_adjoint
+    type(complex8_matrix) :: A_adjoint_adjoint
+    complex(8) :: trace_A_conjugate
+    complex(8) :: trace_A_adjoint
+    logical :: areEqual
+    integer :: size
+    integer :: i,j
+    complex(8) :: out_tr                            ! Output trace
+    integer :: ii                                ! Loop variable
+    integer :: io_status, seed, m
+    integer, allocatable :: seed_array(:)
 
-    ! Call checkpoint with various verbosity levels
-    call checkpoint(debug_mode, verbosity = 1, msg = 'Checkpoint at level 1')
-    call checkpoint(debug_mode, verbosity = 2, msg = 'Checkpoint at level 2 with variables', var1 = a, var2 = b)
-    call checkpoint(debug_mode, verbosity = 3, msg = 'Checkpoint at level 3 with full details', var1 = a, var2 = b, var3 = c)
+    debug = .true.
 
-    ! Disable debug mode and test (no output should occur)
-    debug_mode = .FALSE.
-    call checkpoint(debug_mode, verbosity = 3, msg = 'This should not print')
-end program main
-
-program matrix_multiplication_performance
-    use debugger  ! Importing the debugger module for checkpointing
-    implicit none
-
-    ! Parameters
-    integer :: max_size, step, seed
-    character(len=20) :: type_mult
-    character(len=10) :: opt_flag
-    integer :: io_status
-
-    ! Prompt user for parameters
-    do
-        print*, "Enter max_size (default 900):"
-        read(*, *, IOSTAT=io_status) max_size
-        if (io_status == 0 .and. max_size > 0) exit
-        print*, "Invalid input. Please enter a positive integer for max_size."
-        max_size = 900  ! Default value
-    end do
+    ! Define dimensions for the matrices
+    ! size = 3
 
     do
-        print*, "Enter step (default 100, must be less than max_size):"
-        read(*, *, IOSTAT=io_status) step
-        if (io_status == 0 .and. step > 0 .and. step < max_size) exit
-        print*, "Invalid input. Please enter a positive integer less than max_size."
+        print*, "Enter size of the matrix (default 3):"
+        read(*, *, IOSTAT=io_status) size
+        if (io_status == 0 .and. size > 0) exit
+        print*, "Invalid input. Please enter a positive integer for size."
+        size = 3  ! Default value
     end do
 
     do
@@ -54,192 +43,78 @@ program matrix_multiplication_performance
         seed = 12345  ! Default value
     end do
 
-    do
-        print*, "Enter optimization flag (O1, O2, O3; default O2):"
-        read(*, '(A)', IOSTAT=io_status) opt_flag
-        opt_flag = trim(adjustl(opt_flag))
-        if (io_status == 0 .and. (opt_flag == "O1" .or. opt_flag == "O2" .or. opt_flag == "O3")) exit
-        print*, "Invalid input. Please enter one of O1, O2, O3."
-        opt_flag = "O2"  ! Default value
-    end do
+    ! SEED MANAGEMENT:
 
-    do
-        print*, "Enter type of multiplication (matmul, row-col, col-row, ALL; default ALL):"
-        read(*, '(A)', IOSTAT=io_status) type_mult
-        type_mult = trim(adjustl(type_mult))
-        if (io_status == 0 .and. (type_mult == "matmul" .or. type_mult == "row-col" &
-            .or. type_mult == "col-row" .or. type_mult == "ALL")) exit
-        print*, "Invalid input. Please enter one of matmul, row-col, col-row, ALL."
-        type_mult = "ALL"  ! Default value
-    end do
+    ! Get the size of the seed array required by random_seed
+    call random_seed(size=m)
+    allocate(seed_array(m))
 
-    ! Call to the main matrix multiplication process
-    call perform_multiplications(max_size, step, seed, opt_flag, type_mult)
+    ! Fill the seed array with your seed value
+    seed_array = seed
 
-end program matrix_multiplication_performance
+    ! Set the seed for the random number generator
+    call random_seed(put=seed_array)
 
-subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
-    use debugger  ! Importing the debugger module for checkpointing
-    implicit none
-    integer, intent(in) :: max_size, step, seed
-    character(len=10), intent(in) :: opt_flag
-    character(len=20), intent(in) :: type_mult
-    real(8), allocatable :: A(:,:), B(:,:), C_explicit(:,:), C_intrinsic(:,:)
-    real(8) :: start_time, end_time, time_explicit, time_column, time_matmul
-    character(len=50) :: filename  ! Output filename
-    logical :: flag
-    integer :: i, file_unit  ! File unit number
+    rows = size
+    cols = size
 
-    ! Prepare output file
-    call prepare_output_file(filename, type_mult, max_size, opt_flag, step)
+    ! Initialize matrix A
+    call initMatrix(A, rows, cols)
 
-    open(unit=20, file=filename, status="replace", action="write")
-
-    ! Set the random seed for reproducibility
-    call random_seed()
-
-    ! Loop over matrix sizes
-    do i = step, max_size, step
-        print*, "Matrix size:", i
-        allocate(A(i,i), B(i,i), C_explicit(i,i), C_intrinsic(i,i))
-
-        ! Initialize matrices A and B with random values
-        call random_number(A)
-        call random_number(B)
-
-        ! Measures time for the explicit row-by-column method (i-j-k order)
-        call cpu_time(start_time)
-        C_explicit = 0.0_8
-        call matrix_multiply_explicit(A, B, C_explicit, i)
-        call cpu_time(end_time)
-        time_explicit = end_time - start_time
-        call checkpoint(debug = .TRUE., msg = 'Time taken for explicit method', var1 = time_explicit)
-
-        ! Measures time for the column-by-row approach (i-k-j order)
-        call cpu_time(start_time)
-        C_explicit = 0.0_8
-        call matrix_multiply_column(A, B, C_explicit, i)
-        call cpu_time(end_time)
-        time_column = end_time - start_time
-        call checkpoint(debug = .TRUE., msg = 'Time taken for column method', var1 = time_column)
-
-        ! Measures time for Fortran's MATMUL intrinsic function
-        call cpu_time(start_time)
-        C_intrinsic = matmul(A, B)
-        call cpu_time(end_time)
-        time_matmul = end_time - start_time
-        call checkpoint(debug = .TRUE., msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
-
-        ! Records the computation times for each method in the output file
-        if (type_mult == "ALL") then
-            write(20, '(F12.6, 3X, F12.6, 3X, F12.6)') time_explicit, time_column, time_matmul
-        else if (type_mult == "row-col") then
-            write(20, '(F12.6)') time_explicit
-        else if (type_mult == "col-row") then
-            write(20, '(F12.6)') time_column
-        else if (type_mult == "matmul") then
-            write(20, '(F12.6)') time_matmul
-        end if
-
-        deallocate(A, B, C_explicit, C_intrinsic)
-    end do
-
-    close(20)
-end subroutine perform_multiplications
-
-subroutine prepare_output_file(filename, type_mult, max_size, opt_flag, step)
-    implicit none
-    character(len=50), intent(out) :: filename
-    character(len=20), intent(in) :: type_mult
-    integer, intent(in) :: max_size, step
-    character(len=6) :: max_size_str, step_str
-    character(len=10), intent(in) :: opt_flag
-    logical :: flag
-
-    ! Convert integers to strings without padding
-    write(max_size_str, '(I0)') max_size
-    write(step_str, '(I0)') step
-
-    ! Create the filename without spaces
-    write(filename, '(A, A, A, A, A, A)') "" // trim(type_mult) // "_size_", &
-        trim(max_size_str), "_" // trim(opt_flag) // "_step_", trim(step_str) // ".dat"
-
-    ! Check if file exists, and if not, create it with the header
-    inquire(file=filename, exist=flag)
-    if (.not. flag) then
-        open(unit=20, file=filename, status="replace", action="write")
-        if (type_mult == "ALL") then
-            write(20, '(A)') 'Explicit(i-j-k)    Column-major(i-k-j)    MATMUL'
-        else if (type_mult == "row-col") then
-            write(20, '(A)') 'Explicit(i-j-k)'
-        else if (type_mult == "col-row") then
-            write(20, '(A)') 'Column-major(i-k-j)'
-        else if (type_mult == "matmul") then
-            write(20, '(A)') 'MATMUL'
-        end if
-        close(20)
-    end if
-end subroutine prepare_output_file
-
-subroutine matrix_multiply_explicit(A, B, C, n)
-    implicit none
-    integer, intent(in) :: n
-    real(8), intent(in) :: A(n,n), B(n,n)
-    real(8), intent(inout) :: C(n,n)
-    integer :: i, j, k
-
-    ! Pre-condition: Check matrix dimensions
-    if (size(A, 1) /= n .or. size(A, 2) /= n) then
-        call checkpoint(debug = .TRUE., msg = 'A has incorrect dimensions')
-        stop
-    end if
-    if (size(B, 1) /= n .or. size(B, 2) /= n) then
-        call checkpoint(debug = .TRUE., msg = 'B has incorrect dimensions')
-        stop
-    end if
-    if (size(C, 1) /= n .or. size(C, 2) /= n) then
-        call checkpoint(debug = .TRUE., msg = 'C has incorrect dimensions')
-        stop
-    end if
-
-    do i = 1, n
-        do j = 1, n
-            do k = 1, n
-                C(i,j) = C(i,j) + A(i,k) * B(k,j)
-            end do
+    do i = 1, rows
+        do j = 1, cols
+            ! Generate random real and imaginary parts, cast them to double precision, and assign to A%elem
+            call random_number(A%elem(i, j)%re)
+            call random_number(A%elem(i, j)%im)
+            A%elem(i, j) = dcmplx(A%elem(i, j)%re, A%elem(i, j)%im)  ! Ensure complex(8) type
         end do
     end do
-end subroutine matrix_multiply_explicit
 
-subroutine matrix_multiply_column(A, B, C, n)
-    implicit none
-    integer, intent(in) :: n
-    real(8), intent(in) :: A(n,n), B(n,n)
-    real(8), intent(inout) :: C(n,n)
-    integer :: i, j, k
+    ! Calculate the trace of matrix A
+    trace_A = .Tr. A
+    print *, "Trace of matrix A:", trace_A
 
-    ! Pre-condition: Check matrix dimensions
-    if (size(A, 1) /= n .or. size(A, 2) /= n) then
-        call checkpoint(debug = .TRUE., msg = 'A has incorrect dimensions')
-        stop
-    end if
-    if (size(B, 1) /= n .or. size(B, 2) /= n) then
-        call checkpoint(debug = .TRUE., msg = 'B has incorrect dimensions')
-        stop
-    end if
-    if (size(C, 1) /= n .or. size(C, 2) /= n) then
-        call checkpoint(debug = .TRUE., msg = 'C has incorrect dimensions')
-        stop
-    end if
+    ! Initialize trace to zero
+    out_tr = (0.0d0, 0.0d0)
 
-    do i = 1, n
-        do j = 1, n
-            do k = 1, n
-                C(i,j) = C(i,j) + A(k,i) * B(k,j)
-            end do
-        end do
+    ! Sum the diagonal elements
+    do ii = 1, A%size(1)
+        out_tr = out_tr + A%elem(ii, ii)
     end do
-end subroutine matrix_multiply_column
 
+    ! Expected trace value for matrix A (manual calculation)
+    if (abs(trace_A - out_tr) < 1.0d-5) then
+        call checkpoint_character(debug = .true., verbosity = 1, msg = "Trace of A is correct")
+    else
+        call checkpoint_character(debug = .true., verbosity = 1, msg = "Trace of A is incorrect")
+    end if
 
+    ! Calculate the conjugate transpose (adjoint) of matrix A
+    A_adjoint = .Adj. A
+    trace_A_adjoint = .Tr. A_adjoint
 
+    A_adjoint_adjoint = .Adj. A_adjoint
+
+    ! Verify that (A^H)^H = A
+    call matrices_are_equal(A, A_adjoint_adjoint, areEqual)
+
+    if (areEqual) then
+        call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: (A^H)^H = A is correct")
+    else
+        call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: (A^H)^H = A is incorrect")
+    end if
+
+    ! Calculate the trace of the adjoint of A
+    trace_A_conjugate = .Tr. A_adjoint
+
+    ! Verify that tr(A^H) = \bar{tr(A)}
+    if (abs(trace_A_conjugate - conjg(trace_A)) < 1.0d-5) then
+        call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: tr(A^H) = conjugate of tr(A) is correct")
+    else
+        call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: tr(A^H) = conjugate of tr(A) is incorrect")
+    end if
+
+    call CMatDumpTXT(A, A_adjoint, trace_A, trace_A_adjoint, 'matrix_output.txt')
+    print *, "The original matrix has been written to file: matrix_output.txt"
+
+end program main

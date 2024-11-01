@@ -69,8 +69,8 @@ contains
                     print*, 'Fully detailed Checkpoint: Debugging checkpoint reached.'
                 end if
                 if (present(var1)) call print_variable(var1, 'n_size = :')
-                if (present(var2)) call print_variable(var2, 'Detailed Variable 2:')
-                if (present(var3)) call print_variable(var3, 'Detailed Variable 3:')
+                if (present(var2)) call print_variable(var2, 'rows = ')
+                if (present(var3)) call print_variable(var3, 'cols = ')
             end if
 
             if (vlevel > 3) then
