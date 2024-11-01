@@ -59,16 +59,16 @@ contains
                 else
                     print*, 'Detailed Checkpoint: Debugging checkpoint reached.'
                 end if
-                if (present(var1)) call print_variable(var1, 'Variable 1:')
+                if (present(var1)) call print_variable(var1, 'time = ')
             end if
 
             if (vlevel == 3) then
                 if (present(msg)) then
-                    print*, 'Checkpoint with verbosity 3, full details:', trim(msg)
+                    print*, 'Full details:', trim(msg)
                 else
                     print*, 'Fully detailed Checkpoint: Debugging checkpoint reached.'
                 end if
-                if (present(var1)) call print_variable(var1, 'Detailed Variable 1:')
+                if (present(var1)) call print_variable(var1, 'n_size = :')
                 if (present(var2)) call print_variable(var2, 'Detailed Variable 2:')
                 if (present(var3)) call print_variable(var3, 'Detailed Variable 3:')
             end if
@@ -77,7 +77,7 @@ contains
                 print*, 'Invalid verbosity value. Choose between 1, 2, and 3.'
             end if
 
-            print*, '-------------------------------'
+            ! print*, '-------------------------------'
         end if
     end subroutine checkpoint_core
 

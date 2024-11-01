@@ -121,6 +121,7 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
 
     ! Loop over matrix sizes from step to max_size
     do i = step, max_size, step
+        print*, "------------------------"
         print*, "Matrix size:", i
         allocate(A(i,i), B(i,i), C_explicit(i,i), C_intrinsic(i,i))
 
@@ -152,7 +153,7 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
         call cpu_time(end_time)
         time_matmul = end_time - start_time
 
-        call checkpoint_real(debug = .TRUE., msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
+        call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
 
         ! Record the computation times for each method in the output file
         if (type_mult == "ALL") then
@@ -250,7 +251,7 @@ subroutine matrix_multiply_explicit(A, B, C, n)
         return
     end if
 
-    call checkpoint_integer(debug = .TRUE., verbosity = 2, msg = 'Starting explicit multiplication', var1 = n)
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Starting explicit multiplication', var1 = n)
 
     ! Perform the multiplication in row-by-column order
     do i = 1, n
@@ -262,7 +263,7 @@ subroutine matrix_multiply_explicit(A, B, C, n)
         end do
     end do
 
-    call checkpoint_integer(debug = .TRUE., msg = 'Finished explicit multiplication', var1 = n)
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Finished explicit multiplication, with ', var1 = n)
 end subroutine matrix_multiply_explicit
 
 
@@ -294,7 +295,7 @@ subroutine matrix_multiply_column(A, B, C, n)
         return
     end if
 
-    call checkpoint_integer(debug = .TRUE., verbosity = 2, msg = 'Starting column multiplication', var1 = n)
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Starting column multiplication', var1 = n)
 
     ! Perform the multiplication in column-by-row order
     do i = 1, n
@@ -305,5 +306,5 @@ subroutine matrix_multiply_column(A, B, C, n)
         end do
     end do
 
-    call checkpoint_integer(debug = .TRUE., msg = 'Finished column multiplication', var1 = n)
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Finished column multiplication, with', var1 = n)
 end subroutine matrix_multiply_column
