@@ -98,18 +98,11 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
     integer, intent(in) :: max_size, step, seed
     character(len=10), intent(in) :: opt_flag
     character(len=20), intent(in) :: type_mult
-    real(8), allocatable :: A(:,:), B(:,:), C_explicit(:,:), C_intrinsic(:,:)
+    real(8), allocatable :: A(:,:), B(:,:), C(:,:), C_explicit(:,:), C_intrinsic(:,:)
     real(8) :: start_time, end_time, time_explicit, time_column, time_matmul
     character(len=50) :: filename  ! Output filename for performance results
     logical :: flag
     integer :: i, file_unit  ! File unit number for output
-
-    ! Preconditions
-    call checkpoint_real(debug=.TRUE., msg='Beginning matrix multiplication process.')
-    if (max_size <= 0 .or. step <= 0 .or. step >= max_size) then
-        print*, "Error: Invalid matrix size or step configuration."
-        return
-    end if
 
     ! Prepare output file based on user inputs
     call prepare_output_file(filename, type_mult, max_size, opt_flag, step)
@@ -135,7 +128,7 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
         call cpu_time(end_time)
         time_explicit = end_time - start_time
 
-        call checkpoint_real(debug = .TRUE., verbosity= 2, msg = 'Time taken for explicit method', var1 = time_explicit)
+        call checkpoint_real(debug = .TRUE., msg = 'Time taken for explicit method', var1 = time_explicit)
 
         ! Measure time for the column-by-row approach (i-k-j order)
         call cpu_time(start_time)
@@ -173,68 +166,74 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
 end subroutine perform_multiplications
 
 !=============================================================
-! SUBROUTINE: prepare_output_file
-! 
-! Prepares the output filename based on user parameters.
-!
-! INPUTS:
-!    filename - Output filename for storing results
-!    type_mult - Type of multiplication specified by the user
-!    max_size  - Maximum matrix size
-!    opt_flag  - Optimization flag
-!    step      - Step size
-!
-! POSTCONDITIONS:
-!    - The filename string is updated with appropriate information.
+!  SUBROUTINE: prepare_output_file
+!  
+!  This subroutine prepares the output file for the timing results
+!  of the matrix multiplication methods based on user-defined parameters.
+!  
+!  INPUTS:
+!     filename    (character)  Output filename for storing results.
+!     type_mult    (character)  Type of multiplication specified by user.
+!     max_size    (integer)    Maximum size of the matrices.
+!     step        (integer)    Step size for matrix size increments.
+!     opt_flag    (character)  Optimization flag for compiler settings.
+!  
+!  OUTPUTS:
+!     Creates or appends to a file with headers based on the multiplication type.
+!  
+!  POSTCONDITIONS:
+!     The output file is created or overwritten with the appropriate header 
+!     if it does not exist.
 !
 subroutine prepare_output_file(filename, type_mult, max_size, opt_flag, step)
     implicit none
-    character(len=50), intent(out) :: filename
-    character(len=20), intent(in) :: type_mult
-    integer, intent(in) :: max_size, step
-    character(len=6) :: max_size_str, step_str
-    character(len=10), intent(in) :: opt_flag
-    logical :: flag
+    character(len=50), intent(out) :: filename  ! Output filename
+    character(len=20), intent(in) :: type_mult  ! Type of multiplication specified by user
+    integer, intent(in) :: max_size, step  ! Maximum size and step for matrix sizes
+    character(len=6) :: max_size_str, step_str  ! Strings for sizes
+    character(len=10) :: opt_flag  ! Optimization flag
+    logical :: flag  ! Flag for file existence check
 
-    ! Convert integers to strings without padding
     write(max_size_str, '(I0)') max_size
     write(step_str, '(I0)') step
 
-    ! Create the filename without spaces
-    write(filename, '(A, A, A, A, A, A)') "" // trim(type_mult) // "_size_", &
-        trim(max_size_str), "_" // trim(opt_flag) // "_step_", trim(step_str) // ".dat"
+    ! Construct the filename based on the inputs
+    filename = trim("results_" // trim(type_mult) // "_size_" // trim(max_size_str) // "_" // trim(opt_flag) // "_step_" // trim(step_str) // ".dat")
 
     ! Check if file exists, and if not, create it with the header
-        inquire(file=filename, exist=flag)
-        if (.not. flag) then
-            open(unit=20, file=filename, status="replace", action="write")
-            if (type_mult == "ALL") then
-                write(20, '(A)') 'Explicit(i-j-k)    Column-major(i-k-j)    MATMUL'
-            else if (type_mult == "row-col") then
-                write(20, '(A)') 'Explicit(i-j-k)'
-            else if (type_mult == "col-row") then
-                write(20, '(A)') 'Column-major(i-k-j)'
-            else if (type_mult == "matmul") then
-                write(20, '(A)') 'MATMUL'
-            end if
-            close(20)
+    inquire(file=filename, exist=flag)
+    if (.not. flag) then
+        open(unit=20, file=filename, status="replace", action="write")
+        if (type_mult == "ALL") then
+            write(20, '(A)') 'Explicit(i-j-k)    Column-major(i-k-j)    MATMUL'
+        else if (type_mult == "row-col") then
+            write(20, '(A)') 'Explicit(i-j-k)'
+        else if (type_mult == "col-row") then
+            write(20, '(A)') 'Column-major(i-k-j)'
+        else if (type_mult == "matmul") then
+            write(20, '(A)') 'MATMUL'
         end if
+        close(20)  ! Close the header file
+    end if
 end subroutine prepare_output_file
 
-
 !=============================================================
-! SUBROUTINE: matrix_multiply_explicit
-! 
-! Performs matrix multiplication using an explicit row-by-column (i-j-k) approach.
-!
-! INPUTS:
-!    A       - First input matrix
-!    B       - Second input matrix
-!    C       - Result matrix to store the multiplication
-!    n       - Size of the matrices (assumed square)
-!
-! PRECONDITIONS:
-!    - Matrices A, B, and C are allocated and n is a valid matrix size.
+!  SUBROUTINE: matrix_multiply_explicit
+!  
+!  This subroutine performs matrix multiplication using the
+!  explicit row-by-column method (i-j-k order).
+!  
+!  INPUTS:
+!     A          (real(8), intent(in))  First input matrix.
+!     B          (real(8), intent(in))  Second input matrix.
+!     n          (integer)               Dimension of the matrices.
+!  
+!  OUTPUTS:
+!     C          (real(8), intent(out)) Resultant matrix from the multiplication.
+!  
+!  POSTCONDITIONS:
+!     The resultant matrix C contains the product of matrices A and B.
+!     The values in matrix C are updated based on the multiplication operation.
 !
 subroutine matrix_multiply_explicit(A, B, C, n)
     use debugger
@@ -244,41 +243,36 @@ subroutine matrix_multiply_explicit(A, B, C, n)
     real(8), intent(out) :: C(n,n)
     integer :: i, j, k
 
-    ! Preconditions check
-    if (size(A,1) /= n .or. size(A,2) /= n .or. size(B,1) /= n .or. size(B,2) /= n .or. size(C,1) /= n .or. size(C,2) /= n) then
-        print*, "Error: Invalid matrix dimensions for explicit multiplication."
-        return
-    end if
+    ! Initialize the output matrix C to zero
+    C = 0.0_8
 
-    call checkpoint_integer(debug = .TRUE., verbosity = 2, msg = 'Starting explicit multiplication', var1 = n)
-
-    ! Perform the multiplication in row-by-column order
+    ! Perform matrix multiplication using explicit method (i-j-k)
     do i = 1, n
         do j = 1, n
-            C(i,j) = 0.0_8
             do k = 1, n
                 C(i,j) = C(i,j) + A(i,k) * B(k,j)
             end do
         end do
     end do
-
-    call checkpoint_integer(debug = .TRUE., msg = 'Finished explicit multiplication', var1 = n)
 end subroutine matrix_multiply_explicit
 
-
 !=============================================================
-! SUBROUTINE: matrix_multiply_column
-! 
-! Performs matrix multiplication using a column-by-row (i-k-j) approach.
-!
-! INPUTS:
-!    A       - First input matrix
-!    B       - Second input matrix
-!    C       - Result matrix to store the multiplication
-!    n       - Size of the matrices (assumed square)
-!
-! PRECONDITIONS:
-!    - Matrices A, B, and C are allocated and n is a valid matrix size.
+!  SUBROUTINE: matrix_multiply_column
+!  
+!  This subroutine performs matrix multiplication using the
+!  column-by-row method (i-k-j order).
+!  
+!  INPUTS:
+!     A          (real(8), intent(in))  First input matrix.
+!     B          (real(8), intent(in))  Second input matrix.
+!     n          (integer)               Dimension of the matrices.
+!  
+!  OUTPUTS:
+!     C          (real(8), intent(out)) Resultant matrix from the multiplication.
+!  
+!  POSTCONDITIONS:
+!     The resultant matrix C contains the product of matrices A and B.
+!     The values in matrix C are updated based on the multiplication operation.
 !
 subroutine matrix_multiply_column(A, B, C, n)
     use debugger
@@ -288,22 +282,15 @@ subroutine matrix_multiply_column(A, B, C, n)
     real(8), intent(out) :: C(n,n)
     integer :: i, j, k
 
-    ! Preconditions check
-    if (size(A,1) /= n .or. size(A,2) /= n .or. size(B,1) /= n .or. size(B,2) /= n .or. size(C,1) /= n .or. size(C,2) /= n) then
-        print*, "Error: Invalid matrix dimensions for column multiplication."
-        return
-    end if
+    ! Initialize the output matrix C to zero
+    C = 0.0_8
 
-    call checkpoint_integer(debug = .TRUE., verbosity = 2, msg = 'Starting column multiplication', var1 = n)
-
-    ! Perform the multiplication in column-by-row order
-    do i = 1, n
+    ! Perform matrix multiplication using column-by-row method (i-k-j)
+    do j = 1, n
         do k = 1, n
-            do j = 1, n
+            do i = 1, n
                 C(i,j) = C(i,j) + A(i,k) * B(k,j)
             end do
         end do
     end do
-
-    call checkpoint_integer(debug = .TRUE., msg = 'Finished column multiplication', var1 = n)
 end subroutine matrix_multiply_column
