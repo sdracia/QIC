@@ -1,13 +1,66 @@
-! matrix.f90
-! Program for measuring the performance of different matrix multiplication methods
-! Author: [Your Name]
-! Date: [Date]
+! matrix_mult.f90
+! Program for Measuring the Performance of Matrix Multiplication Methods
+! Author: Andrea Turci
+! Date: 2/11/2024
 !
-! This program allows the user to specify parameters for matrix multiplication,
-! including the maximum matrix size, step size, random seed, optimization flags,
-! and the type of multiplication method to evaluate. The performance of explicit
-! row-by-column multiplication, column-by-row multiplication, and Fortran's
-! intrinsic MATMUL function are compared, and the timing results are written to a file.
+! Overview:
+!     This program measures and compares the performance of various matrix multiplication methods,
+!     including explicit (row-by-column), explicit (column-by-row), and Fortran's intrinsic MATMUL function.
+!     It allows users to specify a range of parameters to customize the test, making it possible to
+!     experiment with different matrix sizes, random seeds, optimization flags, and multiplication types.
+!
+! Functional Description:
+!     The program prompts the user to enter the following parameters:
+!         1. Maximum matrix size (`max_size`): Sets the largest dimension for the test matrices.
+!         2. Step size (`step`): Controls the increment size for the matrix dimension in each test.
+!         3. Seed for random number generator (`seed`): Ensures reproducibility of random matrix entries.
+!         4. Optimization flag (`opt_flag`): Specifies the compiler optimization level to be used.
+!         5. Type of multiplication (`type_mult`): Chooses which multiplication methods are evaluated.
+! 
+!     Based on these inputs, the program generates matrices of complex numbers with random entries
+!     and performs the selected matrix multiplication methods. The time taken for each multiplication
+!     is recorded and saved to an output file named according to the parameters.
+!
+! Compilation:
+!     Compile each module individually to enable separate testing and debugging:
+!         gfortran -c debugger.f90
+!         gfortran -c matrix_mult.f90
+!     Then compile the final program by linking the object files:
+!         gfortran -o mat1 matrix_mult.o debugger.o
+!
+! Execution:
+!     Run the program executable:
+!         ./mat1
+!
+! Inputs:
+!     - Prompts for matrix parameters to guide the execution.
+!     - Default values are available to allow convenient testing without all input fields.
+!
+! Outputs:
+!     - A performance result file named based on parameters: <type_mult>_size_<max_size>_<opt_flag>_step_<step>.dat
+!     - Contents of the output file:
+!         - Each line corresponds to a matrix size, with timing values (in seconds) for each evaluated multiplication method.
+!
+! Notes:
+!     - This program is intended for benchmarking and may consume significant memory and time,
+!       especially with large matrices or high step values.
+!
+! Example Run:
+!     The following run of the program:
+!         ./mat1
+!     may output a result file containing:
+!         Explicit(i-j-k)    Column-major(i-k-j)    MATMUL
+!         0.000002          0.000001               0.000002
+!         0.000021          0.000012               0.000021
+!
+! Preconditions:
+!     - Ensure valid input is provided for each parameter.
+!     - Ensure that matrices are square, and dimensions match throughout calculations.
+!
+! Postconditions:
+!     - Matrix multiplication times for each method are saved in the specified file.
+!
+
 
 program matrix_multiplication_performance
     use debugger
@@ -103,6 +156,8 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
     character(len=50) :: filename  ! Output filename for performance results
     logical :: flag
     integer :: i, file_unit  ! File unit number for output
+    integer, allocatable :: seed_array(:)
+    integer :: m
 
     ! Preconditions
     call checkpoint_real(debug=.TRUE., msg='Beginning matrix multiplication process.')
@@ -116,8 +171,17 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
 
     open(unit=20, file=filename, status="replace", action="write")
 
-    ! Set the random seed for reproducibility
-    call random_seed()
+    ! SEED MANAGEMENT:
+
+    ! Get the size of the seed array required by random_seed
+    call random_seed(size=m)
+    allocate(seed_array(m))
+
+    ! Fill the seed array with your seed value
+    seed_array = seed
+
+    ! Set the seed for the random number generator
+    call random_seed(put=seed_array)
 
     ! Loop over matrix sizes from step to max_size
     do i = step, max_size, step

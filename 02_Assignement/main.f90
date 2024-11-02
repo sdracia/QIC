@@ -1,3 +1,73 @@
+! main.f90
+! Program for Testing Matrix Operations on Complex Matrices
+! Author: [Your Name]
+! Date: [Date]
+!
+! Overview:
+!     This program demonstrates the functionality of the `complex8_matrix` derived type
+!     from the `mod_matrix_c8` module. It initializes a complex matrix with random entries,
+!     calculates its trace, computes its adjoint (conjugate transpose), and verifies specific
+!     mathematical properties of the matrix and its adjoint. Additionally, it saves the matrix
+!     data to an output file.
+!
+! Functional Description:
+!     The program prompts the user to specify:
+!         1. Matrix size (`size`): Sets the dimension of the square matrix.
+!         2. Seed for random number generator (`seed`): Ensures reproducibility of random entries.
+!
+!     With these inputs, the program performs the following operations:
+!         1. Initializes a square matrix `A` of complex(8) values with randomly generated real and imaginary parts.
+!         2. Computes the trace of the matrix `A`.
+!         3. Calculates the adjoint (conjugate transpose) of `A`, verifies that the adjoint of the adjoint
+!            matrix matches `A`, and computes the trace of the adjoint.
+!         4. Verifies that the trace of `A`'s adjoint matches the conjugate of `A`'s trace.
+!         5. Writes matrix data and results to an output text file for analysis.
+!
+! Compilation:
+!     Compile each module and main program separately to support modular development and debugging:
+!         gfortran -c debugger.f90
+!         gfortran -c mod_matrix_c8.f90
+!     Then compile the main program by linking all object files:
+!         gfortran -o main debugger.o mod_matrix_c8.o main.f90
+!
+! Execution:
+!     Run the program executable:
+!         ./main
+!
+! Inputs:
+!     - Matrix size: Integer input defining the matrix dimensions.
+!     - Random seed: Integer input for random number generation to ensure reproducibility.
+!
+! Outputs:
+!     - Text file named based on matrix size and seed, e.g., `matrix_result_<size>x<size>_seed_<seed>.dat`.
+!     - Contents of the output file:
+!         - Matrix dimensions, trace, elements of `A`, elements of `A`'s adjoint, and their respective traces.
+!
+! Notes:
+!     - Random values for matrix entries provide a means of testing generalized matrix operations.
+!     - The program verifies mathematical identities for trace and adjoint, ensuring accuracy.
+!     - The output file facilitates data storage for external review and analysis.
+!
+! Example Run:
+!     An example execution may prompt:
+!         Enter size of the matrix (default 3):
+!         Enter seed (default 12345):
+!     Upon completion, the output file might include:
+!         Matrices Size: 3 x 3
+!         ORIGINAL MATRIX:
+!         Trace: (1.2345, 0.6789)
+!         Elements:
+!         (1.0000,0.5000) (0.1000,0.2000) (0.3000,0.4000)
+!         ...
+!
+! Preconditions:
+!     - Ensure valid, positive integer input for matrix size and seed.
+!     - The dimensions provided must be suitable for the system's memory limits.
+!
+! Postconditions:
+!     - Matrix operations and identities are verified and saved in the output file.
+!     - The generated file provides comprehensive data on matrix operations for further analysis.
+
 program main
     use mod_matrix_c8
     use debugger
@@ -6,8 +76,8 @@ program main
     ! defined in the mod_matrix_c8 module. It initializes matrices, computes
     ! their trace and adjoint, and writes the adjoint matrix to a file.
 
-    type(complex8_matrix) :: A, B, C      ! Declare matrices A, B, and C
-    complex(8) :: trace_B, trace_A         ! Variable to store the trace
+    type(complex8_matrix) :: A      ! Declare matrices A, B, and C
+    complex(8) :: trace_A         ! Variable to store the trace
     integer :: rows, cols                  ! Matrix dimensions
     logical :: debug
     type(complex8_matrix) :: A_adjoint
@@ -21,6 +91,7 @@ program main
     integer :: ii                                ! Loop variable
     integer :: io_status, seed, m
     integer, allocatable :: seed_array(:)
+    character(len=50) :: filename
 
     debug = .true.
 
@@ -114,7 +185,7 @@ program main
         call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: tr(A^H) = conjugate of tr(A) is incorrect")
     end if
 
-    call CMatDumpTXT(A, A_adjoint, trace_A, trace_A_adjoint, 'matrix_output.txt')
-    print *, "The original matrix has been written to file: matrix_output.txt"
+    call CMatDumpTXT(A, A_adjoint, trace_A, trace_A_adjoint, seed, filename)
+    print *, "The original matrix has been written to file: ", filename
 
 end program main
