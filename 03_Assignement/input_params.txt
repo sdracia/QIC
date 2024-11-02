@@ -1,6 +1,6 @@
 50              ! N_min
-200             ! N_max
+250             ! N_max
 25             ! m
-12345           ! seed
-O3              ! opt_flag
-ALL             ! type_mult
+5411           ! seed
+O2              ! opt_flag
+matmul             ! type_mult

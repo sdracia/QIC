@@ -216,4 +216,4 @@ if __name__ == '__main__':
       # Run the main function with given Nmin, Nmax, and m
       main(Nmin, Nmax, m, seed, opt_flag, type_mult)
   
-  print(f"Finished saving on file, named {type_mult}_size_{Nmin}-{Nmax}_{opt_flag}_step_{m}.dat")
+  print(f"Finished saving on file, named {type_mult}_size_{Nmin}-{Nmax}_step_{m}_flag_{opt_flag}_{seed}.dat")

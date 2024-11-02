@@ -48,7 +48,7 @@ contains
         end if
 
         ! Prepare output file based on user inputs
-        call prepare_output_file(filename, type_mult, min_size, max_size, opt_flag, step)
+        call prepare_output_file(filename, type_mult, min_size, max_size, opt_flag, step, seed)
 
         !open(unit=20, file=filename, status="old", action="write")
 
@@ -133,23 +133,26 @@ contains
     ! POSTCONDITIONS:
     !    - The filename string is updated with appropriate information.
     !
-    subroutine prepare_output_file(filename, type_mult, min_size, max_size, opt_flag, step)
+    subroutine prepare_output_file(filename, type_mult, min_size, max_size, opt_flag, step, seed)
         implicit none
         character(len=50), intent(out) :: filename
         character(len=20), intent(in) :: type_mult
-        integer, intent(in) :: max_size, step, min_size
-        character(len=6) :: min_size_str, max_size_str, step_str
-        character(len=10), intent(in) :: opt_flag
+        integer, intent(in) :: max_size, step, min_size, seed
+        character(len=6) :: min_size_str, max_size_str, step_str, seed_str
+        character(len=6), intent(in) :: opt_flag
         logical :: flag
 
         ! Convert integers to strings without padding
         write(min_size_str, '(I0)') min_size
         write(max_size_str, '(I0)') max_size
         write(step_str, '(I0)') step
+        write(seed_str, '(I0)') seed
 
         ! Create the filename without spaces
-        write(filename, '(A, A, A, A, A, A)') "data/" // trim(type_mult) // "_size_", &
-            trim(min_size_str), "-" // trim(max_size_str), "_"// trim(opt_flag) // "_step_", trim(step_str) // ".dat"
+        write(filename, '(A, A, A, A, A, A, A, A)') "data/" // trim(type_mult) // "_size_", &
+            trim(min_size_str), "-" // trim(max_size_str), "_step_", &
+            trim(step_str), "_flag_" // trim(opt_flag), "_" // trim(seed_str) // ".dat"
+        
 
         ! Check if file exists, and if not, create it with the header
         inquire(file=filename, exist=flag)
