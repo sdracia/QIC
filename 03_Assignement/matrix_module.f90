@@ -151,7 +151,7 @@ contains
         ! Create the filename without spaces
         write(filename, '(A, A, A, A, A, A, A, A)') "data/" // trim(type_mult) // "_size_", &
             trim(min_size_str), "-" // trim(max_size_str), "_step_", &
-            trim(step_str), "_flag_" // trim(opt_flag), "_" // trim(seed_str) // ".dat"
+            trim(step_str), "_flag_" // trim(opt_flag) // ".dat"
         
 
         ! Check if file exists, and if not, create it with the header
