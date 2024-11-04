@@ -102,7 +102,8 @@ contains
         write(dim_1, '(I0)') cmx%size(1)
         write(dim_2, '(I0)') cmx%size(2)
         write(char_seed, '(I0)') seed
-        write(filename, '(A, A, A, A, A, A)') "matrix_result_" // trim(dim_1) // "x" // trim(dim_2), "_seed_" // trim(char_seed) // ".dat"
+        write(filename, '(A, A, A, A, A, A)') "complex_matrix/matrix_result_" // trim(dim_1) // "x", &
+            trim(dim_2), "_seed_" // trim(char_seed) // ".dat"
         
         open(unit=10, file=filename, status='replace', iostat=i)
         if (i /= 0) then

@@ -95,9 +95,6 @@ program main
 
     debug = .true.
 
-    ! Define dimensions for the matrices
-    ! size = 3
-
     do
         print*, "Enter size of the matrix (default 3):"
         read(*, *, IOSTAT=io_status) size

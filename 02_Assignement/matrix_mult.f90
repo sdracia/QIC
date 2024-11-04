@@ -169,8 +169,6 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
     ! Prepare output file based on user inputs
     call prepare_output_file(filename, type_mult, max_size, opt_flag, step)
 
-    open(unit=20, file=filename, status="replace", action="write")
-
     ! SEED MANAGEMENT:
 
     ! Get the size of the seed array required by random_seed
@@ -266,7 +264,7 @@ subroutine prepare_output_file(filename, type_mult, max_size, opt_flag, step)
     write(step_str, '(I0)') step
 
     ! Create the filename without spaces
-    write(filename, '(A, A, A, A, A, A)') "" // trim(type_mult) // "_size_", &
+    write(filename, '(A, A, A, A, A, A)') "data_mult/" // trim(type_mult) // "_size_", &
         trim(max_size_str), "_" // trim(opt_flag) // "_step_", trim(step_str) // ".dat"
 
     ! Check if file exists, and if not, create it with the header
@@ -282,7 +280,6 @@ subroutine prepare_output_file(filename, type_mult, max_size, opt_flag, step)
             else if (type_mult == "matmul") then
                 write(20, '(A)') 'MATMUL'
             end if
-            close(20)
         end if
 end subroutine prepare_output_file
 
