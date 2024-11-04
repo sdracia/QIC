@@ -1,7 +1,7 @@
 ! main.f90
 ! Program for Testing Matrix Operations on Complex Matrices
-! Author: [Your Name]
-! Date: [Date]
+! Author: Andrea Turci
+! Date: 3/11/2024
 !
 ! Overview:
 !     This program demonstrates the functionality of the `complex8_matrix` derived type
@@ -142,6 +142,7 @@ program main
     trace_A = .Tr. A
     print *, "Trace of matrix A:", trace_A
 
+    ! Test manual calculation of the Trace
     ! Initialize trace to zero
     out_tr = (0.0d0, 0.0d0)
 
@@ -157,6 +158,7 @@ program main
         call checkpoint_character(debug = .true., verbosity = 1, msg = "Trace of A is incorrect")
     end if
 
+    ! Verification of (A^H)^H = A
     ! Calculate the conjugate transpose (adjoint) of matrix A
     A_adjoint = .Adj. A
     trace_A_adjoint = .Tr. A_adjoint
@@ -172,6 +174,7 @@ program main
         call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: (A^H)^H = A is incorrect")
     end if
 
+    ! Verification of tr(A^H) = conjugate of tr(A)
     ! Calculate the trace of the adjoint of A
     trace_A_conjugate = .Tr. A_adjoint
 
@@ -182,6 +185,7 @@ program main
         call checkpoint_character(debug = .true., verbosity = 1, msg = "Verification: tr(A^H) = conjugate of tr(A) is incorrect")
     end if
 
+    ! Writing everything to the text file
     call CMatDumpTXT(A, A_adjoint, trace_A, trace_A_adjoint, seed, filename)
     print *, "The original matrix has been written to file: ", filename
 

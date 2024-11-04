@@ -185,37 +185,54 @@ subroutine perform_multiplications(max_size, step, seed, opt_flag, type_mult)
     do i = step, max_size, step
         print*, "------------------------"
         print*, "Matrix size:", i
+
         allocate(A(i,i), B(i,i), C_explicit(i,i), C_intrinsic(i,i))
 
         ! Initialize matrices A and B with random values
         call random_number(A)
         call random_number(B)
 
-        ! Measure time for the explicit row-by-column method (i-j-k order)
-        call cpu_time(start_time)
-        C_explicit = 0.0_8
-        call matrix_multiply_explicit(A, B, C_explicit, i)
-        call cpu_time(end_time)
-        time_explicit = end_time - start_time
 
-        call checkpoint_real(debug = .TRUE., verbosity= 2, msg = 'Time taken for explicit method', var1 = time_explicit)
+        if (type_mult == "ALL" .or. type_mult == "row-col") then
 
-        ! Measure time for the column-by-row approach (i-k-j order)
-        call cpu_time(start_time)
-        C_explicit = 0.0_8
-        call matrix_multiply_column(A, B, C_explicit, i)
-        call cpu_time(end_time)
-        time_column = end_time - start_time
+            ! Measure time for the explicit row-by-column method (i-j-k order)
+            call cpu_time(start_time)
+            C_explicit = 0.0_8
 
-        call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for column method', var1 = time_column)
+            call matrix_multiply_explicit(A, B, C_explicit, i)
+            call cpu_time(end_time)
+            time_explicit = end_time - start_time
 
-        ! Measure time for Fortran's MATMUL intrinsic function
-        call cpu_time(start_time)
-        C_intrinsic = matmul(A, B)
-        call cpu_time(end_time)
-        time_matmul = end_time - start_time
+            call checkpoint_real(debug = .TRUE., verbosity= 2, msg = 'Time taken for row-col method', var1 = time_explicit)
+        
+        end if 
 
-        call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
+        if (type_mult == "ALL" .or. type_mult == "col-row") then
+
+            ! Measure time for the column-by-row approach (i-k-j order)
+            call cpu_time(start_time)
+            C_explicit = 0.0_8
+
+            call matrix_multiply_column(A, B, C_explicit, i)
+            call cpu_time(end_time)
+            time_column = end_time - start_time
+
+            call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for col-row method', var1 = time_column)
+
+        end if 
+
+        if (type_mult == "ALL" .or. type_mult == "matmul") then
+    
+            ! Measure time for Fortran's MATMUL intrinsic function
+            call cpu_time(start_time)
+            C_intrinsic = matmul(A, B)
+
+            call cpu_time(end_time)
+            time_matmul = end_time - start_time
+
+            call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
+        
+        end if 
 
         ! Record the computation times for each method in the output file
         if (type_mult == "ALL") then
@@ -306,13 +323,13 @@ subroutine matrix_multiply_explicit(A, B, C, n)
     real(8), intent(out) :: C(n,n)
     integer :: i, j, k
 
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Starting row-col multiplication, with ', var1 = size(C,1))
+
     ! Preconditions check
     if (size(A,1) /= n .or. size(A,2) /= n .or. size(B,1) /= n .or. size(B,2) /= n .or. size(C,1) /= n .or. size(C,2) /= n) then
         print*, "Error: Invalid matrix dimensions for explicit multiplication."
         return
     end if
-
-    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Starting explicit multiplication', var1 = n)
 
     ! Perform the multiplication in row-by-column order
     do i = 1, n
@@ -324,7 +341,14 @@ subroutine matrix_multiply_explicit(A, B, C, n)
         end do
     end do
 
-    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Finished explicit multiplication, with ', var1 = n)
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Finishing row-col multiplication, with ', var1 = size(C,1))
+
+    ! Post-conditions check
+    if (size(A,1) /= n .or. size(A,2) /= n .or. size(B,1) /= n .or. size(B,2) /= n .or. size(C,1) /= n .or. size(C,2) /= n) then
+        print*, "Error: Invalid matrix dimensions for explicit multiplication."
+        return
+    end if
+
 end subroutine matrix_multiply_explicit
 
 
@@ -350,13 +374,13 @@ subroutine matrix_multiply_column(A, B, C, n)
     real(8), intent(out) :: C(n,n)
     integer :: i, j, k
 
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Starting col-row multiplication, with ', var1 = size(C,1))
+
     ! Preconditions check
     if (size(A,1) /= n .or. size(A,2) /= n .or. size(B,1) /= n .or. size(B,2) /= n .or. size(C,1) /= n .or. size(C,2) /= n) then
         print*, "Error: Invalid matrix dimensions for column multiplication."
         return
     end if
-
-    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Starting column multiplication', var1 = n)
 
     ! Perform the multiplication in column-by-row order
     do i = 1, n
@@ -367,5 +391,12 @@ subroutine matrix_multiply_column(A, B, C, n)
         end do
     end do
 
-    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Finished column multiplication, with', var1 = n)
+    call checkpoint_integer(debug = .TRUE., verbosity = 3, msg = 'Finished col-row multiplication, with ', var1 = size(C,1))
+
+    ! Preconditions check
+    if (size(A,1) /= n .or. size(A,2) /= n .or. size(B,1) /= n .or. size(B,2) /= n .or. size(C,1) /= n .or. size(C,2) /= n) then
+        print*, "Error: Invalid matrix dimensions for column multiplication."
+        return
+    end if
+
 end subroutine matrix_multiply_column
