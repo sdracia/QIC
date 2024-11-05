@@ -74,32 +74,47 @@ contains
             call random_number(A)
             call random_number(B)
 
-            ! Measure time for the explicit row-by-column method (i-j-k order)
-            call cpu_time(start_time)
-            C_explicit = 0.0_8
-            call matrix_multiply_explicit(A, B, C_explicit, i)
-            call cpu_time(end_time)
-            time_explicit = end_time - start_time
+            if (type_mult == "ALL" .or. type_mult == "row-col") then
 
-            call checkpoint_real(debug = .TRUE., verbosity= 2, msg = 'Time taken for explicit method', var1 = time_explicit)
+                ! Measure time for the explicit row-by-column method (i-j-k order)
+                call cpu_time(start_time)
+                C_explicit = 0.0_8
+    
+                call matrix_multiply_explicit(A, B, C_explicit, i)
+                call cpu_time(end_time)
+                time_explicit = end_time - start_time
+    
+                call checkpoint_real(debug = .TRUE., verbosity= 2, msg = 'Time taken for row-col method', var1 = time_explicit)
+            
+            end if 
 
-            ! Measure time for the column-by-row approach (i-k-j order)
-            call cpu_time(start_time)
-            C_explicit = 0.0_8
-            call matrix_multiply_column(A, B, C_explicit, i)
-            call cpu_time(end_time)
-            time_column = end_time - start_time
+            if (type_mult == "ALL" .or. type_mult == "col-row") then
 
-            call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for column method', var1 = time_column)
+                ! Measure time for the column-by-row approach (i-k-j order)
+                call cpu_time(start_time)
+                C_explicit = 0.0_8
 
-            ! Measure time for Fortran's MATMUL intrinsic function
-            call cpu_time(start_time)
-            C_intrinsic = matmul(A, B)
-            call cpu_time(end_time)
-            time_matmul = end_time - start_time
+                call matrix_multiply_column(A, B, C_explicit, i)
+                call cpu_time(end_time)
+                time_column = end_time - start_time
 
-            call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
+                call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for col-row method', var1 = time_column)
 
+            end if 
+            
+            if (type_mult == "ALL" .or. type_mult == "matmul") then
+    
+                ! Measure time for Fortran's MATMUL intrinsic function
+                call cpu_time(start_time)
+                C_intrinsic = matmul(A, B)
+    
+                call cpu_time(end_time)
+                time_matmul = end_time - start_time
+    
+                call checkpoint_real(debug = .TRUE., verbosity = 2, msg = 'Time taken for intrinsic MATMUL', var1 = time_matmul)
+            
+            end if 
+            
             ! Record the computation times for each method in the output file
             if (type_mult == "ALL") then
                 write(20, '(I6, 3X, F12.6, 3X, F12.6, 3X, F12.6)') i, time_explicit, time_column, time_matmul
