@@ -1,6 +1,6 @@
 100             ! N_min
-3500            ! N_max
+700             ! N_max
 100             ! m
-1           ! seed
+12345           ! seed
 O1              ! opt_flag
-ALL          ! type_mult
+row-col         ! type_mult
