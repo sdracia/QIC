@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import debugger as db
+from scipy.special import factorial
 
 def hermite(x, n):
   """
@@ -65,7 +66,7 @@ def harmonic_en(omega=1.0, n=0):
 
 # ===========================================================================================================
 
-def harmonic_wfc(x, omega=1.0, n=0):
+def harmonic_wfc(x, omega, n):
   """
   harmonic_wfc:
       Wavefunction of order 'n' for an harmonic potential, 
@@ -92,7 +93,7 @@ def harmonic_wfc(x, omega=1.0, n=0):
   m = 1.0
   
   # Components of the analytical solution for stationary states.
-  prefactor = 1/np.sqrt(2**n * math.factorial(n)) * ((m * omega)/(np.pi * hbar))**(0.25)
+  prefactor = 1/np.sqrt(2**n * factorial(n, exact=False)) * ((m * omega)/(np.pi * hbar))**(0.25)
   x_coeff = np.sqrt(m * omega / hbar)
   exponential = np.exp(- (m * omega * x**2) / (2 * hbar))
   
