@@ -100,3 +100,25 @@ def harmonic_wfc(x, omega, n):
   # Complete wavefunction.
   psi = prefactor * exponential * hermite(x_coeff * x, n)
   return psi
+
+
+def analytic_eigenv(x_i, omega, k):
+
+    eigenvalues_analy = []
+    eigenvectors_analy = []
+
+    for i in range(k):
+        wavefunction = harmonic_wfc(x_i, omega, i)
+
+        norm = np.sqrt(np.sum(np.abs(wavefunction)**2))
+        eigenvector = wavefunction / norm
+
+        eigenvalue = harmonic_en(omega, i)
+
+        eigenvalues_analy.append(eigenvalue)
+        eigenvectors_analy.append(eigenvector)
+
+    eigenvalues_analy = np.array(eigenvalues_analy)
+    eigenvectors_analy = np.array(eigenvectors_analy)
+
+    return eigenvalues_analy, eigenvectors_analy
