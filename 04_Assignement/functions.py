@@ -69,11 +69,11 @@ def hamiltonian_gen(size, deltax, x_i, omega, order = 2):
     
     return A, eigenvalues, eigenvectors.T
 
-def plot(k, eigenvalues, eigenvectors, x_i, L, omega):
+def plot(number_to_print, eigenvalues, eigenvectors, x_i, L, omega):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
-    colors = plt.cm.tab20.colors[:k]
+    colors = plt.cm.tab10.colors[:number_to_print]
     
-    for i in range(k):
+    for i in range(number_to_print):
       ax1.plot(x_i, eigenvectors[i], label=f"{i}-th eigenvector $\psi(x)$", color=colors[i], linewidth=1.5, linestyle="--")
 
     ax1.set_xlabel("Position $x$")
@@ -84,13 +84,14 @@ def plot(k, eigenvalues, eigenvectors, x_i, L, omega):
     ax1.set_xlim(-L,L)
 
     # Plot the potential and energy levels in the second subplot
-    ax2.plot(x_i, 0.5 * omega**2 * x_i**2, label="Harmonic potential $V(x)$", color="red", linestyle="--", linewidth=1.5)
-    for i in range(k):
-      ax2.axhline(eigenvalues[i], label=f"{i}-th eigenvelue", color=colors[i], linestyle="-.", linewidth=1, alpha=0.8)
+    ax2.plot(x_i, 0.5 * omega**2 * x_i**2, label="Harmonic potential $V(x)$", color="red", linestyle="-", linewidth=1.5)
+    for i in range(number_to_print):
+      ax2.axhline(eigenvalues[i], label=f"{i}-th eigenvelue", color=colors[i], linestyle="-.", linewidth=1.5, alpha=0.8)
 
     ax2.set_xlabel("Position $x$")
     ax2.set_ylabel("Energy")
     ax2.set_title("Energy Levels and Harmonic Potential")
+    ax2.set_ylim(-0.5, 8)
     ax2.grid(True, linestyle='--', alpha=0.7)
     ax2.legend(loc="upper left", bbox_to_anchor=(1.05, 1), borderaxespad=0.)
     ax2.set_xlim(-L,L)
@@ -208,40 +209,8 @@ def stability(num_runs, order, k, N, deltax, x_i, omega):
             dot_matrix[i, j - 1] = np.abs(1 - np.abs(dot_product))
 
     eigvec_dot_mean = np.mean(dot_matrix, axis=1)
-    
-    # Plot eigenvalue stability
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-    # Plot the mean and std of eigenvalues
-    axes[0].bar(range(1, k + 1), eigenvalues_std, color='blue', edgecolor='black', alpha=0.7)
-    # Labeling the plot
-    axes[0].set_title("Eigenvalue Variability Error Across Runs")
-    axes[0].set_xlabel("Eigenvalue Index")
-    axes[0].set_ylabel("Standard Deviation (Error)")
-    axes[0].set_xticks(range(1, k + 1))
-    axes[0].grid(True, linestyle="--", alpha=0.5)
-
-
-    axes[1].bar(range(1, k + 1), eigvec_dot_mean, color='blue', edgecolor='black', alpha=0.7)
-    # Labeling the plot
-    axes[1].set_title("Eigenvector Mean Discrepancy Across Runs")
-    axes[1].set_xlabel("Eigenvector Index")
-    axes[1].set_ylabel("Degree of Dissimilarity (mean)")
-    axes[1].set_xticks(range(1, k + 1))
-    axes[1].grid(True, linestyle="--", alpha=0.5)
-
-    # # Plot eigenvector stability (angle differences)
-    # sns.heatmap(dot_matrix*1e16, annot=True, fmt='.2f', cmap='coolwarm', cbar=True, 
-    #             xticklabels=[f'Col {i}' for i in range(num_runs-1)], 
-    #             yticklabels=[f'Row {i}' for i in range(k)])
-
-    # # Aggiungi il titolo
-    # axes[1].set_title("Eigenvector Stability Across Runs")
-
-    plt.tight_layout()
-    plt.show()
-
-    return eigenvalues_mean, eigenvalues_std, dot_matrix
+    return eigenvalues_std, eigvec_dot_mean, dot_matrix
 
 
 #########################################
@@ -320,16 +289,16 @@ def scaling_heatmap(eigval_errors_matrix, eigvec_dots_matrix, sizes, k):
     # Heatmap per gli errori sugli autovalori
     sns.heatmap(np.log10(eigval_errors_matrix), ax=axes[0], annot=False, cmap="YlGnBu", 
                 xticklabels=np.arange(1, k+1), yticklabels=sizes)
-    axes[0].set_title("Log10 of Errors on Eigenvalues")
-    axes[0].set_xlabel("Eigenvalue Index")
-    axes[0].set_ylabel("Matrix Size")
+    axes[0].set_title("Log10 of Errors on Eigenvalues", fontsize=16)
+    axes[0].set_xlabel("Eigenvalue Index", fontsize=16)
+    axes[0].set_ylabel("Matrix Size", fontsize=16)
 
     # Heatmap per il prodotto scalare degli autovettori
     sns.heatmap(np.log10(eigvec_dots_matrix), ax=axes[1], annot=False, cmap="YlOrRd", 
                 xticklabels=np.arange(1, k+1), yticklabels=sizes)
-    axes[1].set_title(" Log of Error $|1 - |dot||$ on Eigenvectors")
-    axes[1].set_xlabel("Eigenvector Index")
-    axes[1].set_ylabel("Matrix Size")
+    axes[1].set_title(" Log of Error $|1 - |dot||$ on Eigenvectors", fontsize=16)
+    axes[1].set_xlabel("Eigenvector Index", fontsize=16)
+    axes[1].set_ylabel("Matrix Size", fontsize=16)
 
     plt.tight_layout()
     plt.show()
