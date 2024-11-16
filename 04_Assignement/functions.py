@@ -4,6 +4,32 @@ import seaborn as sns
 import analytical_solution as anso
 
 def kinetic_gen(size, deltax, order = 2):
+    """
+    Generates the kinetic energy matrix for a discretized system with a specified accuracy order.
+
+    Parameters
+    ----------
+    size : int
+        The size of the square matrix.
+    deltax : float
+        The spacing of the grid points.
+    order : int, optional
+        The order of accuracy for the finite difference method. Supported values are:
+        - 2: Second-order accuracy.
+        - 4: Fourth-order accuracy.
+        Default is 2.
+
+    Returns
+    -------
+    K : numpy.ndarray
+        The generated kinetic energy matrix.
+
+    Notes
+    -----
+    - For `order=2`, the matrix is constructed using the second-order central difference method.
+    - For `order=4`, the matrix uses the fourth-order central difference method.
+    - If an unsupported order is provided, an error message is printed, and the function returns nothing.
+    """
     factor = 1/(2*(deltax**2))
 
     if (order == 2):
@@ -28,6 +54,28 @@ def kinetic_gen(size, deltax, order = 2):
     return K
 
 def potential_gen(size, x_i, omega):
+    """
+    Generates the potential energy matrix for a quantum harmonic oscillator.
+
+    Parameters
+    ----------
+    size : int
+        The size of the square matrix.
+    x_i : numpy.ndarray
+        The positions in the discretized grid.
+    omega : float
+        The angular frequency of the harmonic oscillator.
+
+    Returns
+    -------
+    V : numpy.ndarray
+        The generated potential energy matrix.
+
+    Notes
+    -----
+    - The potential is calculated as V(x) = (1/2) * omega^2 * x^2.
+    - The matrix is diagonal, as the potential is position-dependent.
+    """
     factor = (omega**2)/2
     main_diag = (x_i**2) * np.ones(size)
 
@@ -36,6 +84,37 @@ def potential_gen(size, x_i, omega):
     return V
 
 def hamiltonian_gen(size, deltax, x_i, omega, order = 2):
+    """
+    Generates the Hamiltonian matrix and computes its eigenvalues and eigenvectors.
+
+    Parameters
+    ----------
+    size : int
+        The size of the square matrix.
+    deltax : float
+        The spacing of the grid points.
+    x_i : numpy.ndarray
+        The positions in the discretized grid.
+    omega : float
+        The angular frequency of the harmonic oscillator.
+    order : int, optional
+        The order of accuracy for the finite difference method. Supported values are 2 or 4.
+        Default is 2.
+
+    Returns
+    -------
+    A : numpy.ndarray
+        The Hamiltonian matrix (K + V).
+    eigenvalues : numpy.ndarray
+        The eigenvalues of the Hamiltonian, sorted in ascending order.
+    eigenvectors : numpy.ndarray
+        The eigenvectors of the Hamiltonian, normalized and aligned.
+
+    Notes
+    -----
+    - The Hamiltonian is computed as H = K + V.
+    - The eigenvectors are normalized and adjusted for consistent sign convention.
+    """
 
     K = kinetic_gen(size, deltax, order)
     V = potential_gen(size, x_i, omega)
@@ -70,6 +149,29 @@ def hamiltonian_gen(size, deltax, x_i, omega, order = 2):
     return A, eigenvalues, eigenvectors.T
 
 def plot(number_to_print, eigenvalues, eigenvectors, x_i, L, omega):
+    """
+    Plots the eigenfunctions and energy levels of the quantum harmonic oscillator.
+
+    Parameters
+    ----------
+    number_to_print : int
+        Number of eigenfunctions and energy levels to display.
+    eigenvalues : numpy.ndarray
+        The eigenvalues of the Hamiltonian.
+    eigenvectors : numpy.ndarray
+        The eigenvectors of the Hamiltonian.
+    x_i : numpy.ndarray
+        The positions in the discretized grid.
+    L : float
+        The limit of the grid (half-width).
+    omega : float
+        The angular frequency of the harmonic oscillator.
+
+    Returns
+    -------
+    None
+        Displays the plots.
+    """
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
     colors = plt.cm.tab10.colors[:number_to_print]
     
@@ -104,6 +206,34 @@ def plot(number_to_print, eigenvalues, eigenvectors, x_i, L, omega):
 #############################
 
 def correctness(k, eigenvalues, eigenvectors, eigenvalues_analy, eigenvectors_analy):
+    """
+    Computes the errors between approximate and analytical eigenvalues and eigenvectors.
+
+    Parameters
+    ----------
+    k : int
+        Number of eigenvalues and eigenvectors to consider.
+    eigenvalues : np.ndarray
+        Approximate eigenvalues.
+    eigenvectors : np.ndarray
+        Approximate eigenvectors.
+    eigenvalues_analy : np.ndarray
+        Analytical eigenvalues for comparison.
+    eigenvectors_analy : np.ndarray
+        Analytical eigenvectors for comparison.
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - relative_eigval_errors (np.ndarray): Relative errors of the eigenvalues.
+        - eigvec_dot (list): Dot product differences between approximate and analytical eigenvectors.
+
+    Notes
+    -----
+    - The eigenvectors are normalized before calculating dot products.
+    - Dot products indicate similarity, with values closer to zero implying higher similarity.
+    """
     # Eigenvalue errors
     eigval_errors = np.abs(eigenvalues - eigenvalues_analy)
     relative_eigval_errors = eigval_errors / np.abs(eigenvalues_analy)
@@ -131,6 +261,23 @@ def correctness(k, eigenvalues, eigenvectors, eigenvalues_analy, eigenvectors_an
     return relative_eigval_errors, eigvec_dot
 
 def plot_correctness(k, rel_eigval_err, eigvec_dot):
+    """
+    Plots the relative errors in eigenvalues and dot product differences for eigenvectors.
+
+    Parameters
+    ----------
+    k : int
+        Number of eigenvalues and eigenvectors to display.
+    rel_eigval_err : np.ndarray
+        Relative errors of the eigenvalues.
+    eigvec_dot : list
+        Dot product differences between approximate and analytical eigenvectors.
+
+    Returns
+    -------
+    None
+        Displays two bar plots for eigenvalue and eigenvector errors.
+    """
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -153,6 +300,28 @@ def plot_correctness(k, rel_eigval_err, eigvec_dot):
     plt.show()
 
 def plot_both_correctness(k, eigval2, eigval4, eigvec2, eigvec4):
+    """
+    Plots relative errors in eigenvalues and dot product differences for eigenvectors 
+    comparing second-order and fourth-order approximations.
+
+    Parameters
+    ----------
+    k : int
+        Number of eigenvalues and eigenvectors to display.
+    eigval2 : np.ndarray
+        Relative errors in eigenvalues for the second-order approximation.
+    eigval4 : np.ndarray
+        Relative errors in eigenvalues for the fourth-order approximation.
+    eigvec2 : list
+        Dot product differences for eigenvectors in the second-order approximation.
+    eigvec4 : list
+        Dot product differences for eigenvectors in the fourth-order approximation.
+
+    Returns
+    -------
+    None
+        Displays a side-by-side comparison of the correctness plots for the two orders.
+    """
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 
     # Plot 1: Eigenvalue Errors
@@ -169,9 +338,9 @@ def plot_both_correctness(k, eigval2, eigval4, eigvec2, eigvec4):
     axes[1].bar(range(1, k + 1), eigvec2, color='teal', alpha=0.7, edgecolor='black', label="Order 2")
     axes[1].bar(range(1, k + 1), eigvec4, color='red', alpha=0.7, edgecolor='black', label="Order 4")
     axes[1].set_yscale("log")
-    axes[1].set_xlabel("Eigenvalue Index", fontsize=12)
-    axes[1].set_ylabel("Relative Error", fontsize=12)
-    axes[1].set_title("Relative Error in Eigenvalues", fontsize=14)
+    axes[1].set_xlabel("Eigenvector Index", fontsize=12)
+    axes[1].set_ylabel("1 - dot product", fontsize=12)
+    axes[1].set_title("Dot Product Between Approximate and Analytical Eigenvectors", fontsize=14)
     axes[1].legend()
     axes[1].grid(True, linestyle="--", alpha=0.5)
 
@@ -184,6 +353,38 @@ def plot_both_correctness(k, eigval2, eigval4, eigvec2, eigvec4):
 #############################
 
 def stability(num_runs, order, k, N, deltax, x_i, omega):
+    """
+    Analyzes the stability of eigenvalues and eigenvectors over multiple runs.
+
+    Parameters
+    ----------
+    num_runs : int
+        Number of repetitions for stability analysis.
+    order : int
+        Order of discretization (2 or 4).
+    k : int
+        Number of eigenvalues and eigenvectors to consider.
+    N : int
+        Size of the Hamiltonian matrix.
+    deltax : float
+        Discretization step size.
+    x_i : np.ndarray
+        Grid points.
+    omega : float
+        Frequency parameter for the potential.
+
+    Returns
+    -------
+    tuple
+        - eigenvalues_std (np.ndarray): Standard deviations of eigenvalues across runs.
+        - eigvec_dot_mean (np.ndarray): Mean dot product differences for eigenvectors.
+        - dot_matrix (np.ndarray): Dot product differences for all eigenvectors across runs.
+
+    Notes
+    -----
+    - Eigenvalues and eigenvectors are calculated `num_runs` times for consistency analysis.
+    - Dot product differences between eigenvectors indicate variability across runs.
+    """
     eigenvalues_runs = []
     eigenvectors_runs = []
 
@@ -218,7 +419,34 @@ def stability(num_runs, order, k, N, deltax, x_i, omega):
 #########################################
 
 def discretization_size(N_min, N_max, step, k, omega, L, order):
+    """
+    Analyzes the effect of discretization size on the accuracy of eigenvalues and eigenvectors.
 
+    Parameters
+    ----------
+    N_min : int
+        Minimum number of grid points.
+    N_max : int
+        Maximum number of grid points.
+    step : int
+        Step size for the number of grid points.
+    k : int
+        Number of eigenvalues and eigenvectors to consider.
+    omega : float
+        Frequency parameter for the potential.
+    L : float
+        Half-length of the spatial domain.
+    order : int
+        Order of discretization (2 or 4).
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - eigval_errors_matrix (np.ndarray): Relative errors of eigenvalues for each N.
+        - eigvec_dots_matrix (np.ndarray): Dot product differences for eigenvectors for each N.
+        - sizes (list): List of discretization sizes analyzed.
+    """
     sizes = list(range(N_min, N_max, step))
     num_sizes = len(sizes)
 
@@ -250,6 +478,33 @@ def discretization_size(N_min, N_max, step, k, omega, L, order):
 
 
 def omega_variation(omega_min, omega_max, omega_step, k, N, L, order):
+    """
+    Examines how the eigenvalue and eigenvector errors vary with the frequency parameter, omega.
+
+    Parameters
+    ----------
+    omega_min : float
+        Minimum value of omega.
+    omega_max : float
+        Maximum value of omega.
+    omega_step : float
+        Step size for omega variation.
+    k : int
+        Number of eigenvalues and eigenvectors to consider.
+    N : int
+        Size of the Hamiltonian matrix.
+    L : float
+        Half-length of the spatial domain.
+    order : int
+        Order of discretization (2 or 4).
+
+    Returns
+    -------
+    tuple
+        - eigval_errors_matrix (np.ndarray): Relative errors of eigenvalues for each omega.
+        - eigvec_dots_matrix (np.ndarray): Dot product differences for eigenvectors for each omega.
+        - omegas (list): List of omega values analyzed.
+    """
 
     omega_sizes = list(np.round(np.arange(omega_min, omega_max, omega_step), decimals=2))
     num_sizes = len(omega_sizes)
@@ -282,7 +537,29 @@ def omega_variation(omega_min, omega_max, omega_step, k, N, L, order):
     return eigval_errors_matrix, eigvec_dots_matrix, omega_sizes
 
 
-def scaling_heatmap(eigval_errors_matrix, eigvec_dots_matrix, sizes, k):
+def scaling_heatmap(eigval_errors_matrix, eigvec_dots_matrix, sizes, k, type):
+    """
+    Generates heatmaps to visualize eigenvalue and eigenvector errors across discretization sizes.
+
+    Parameters
+    ----------
+    eigval_errors_matrix : np.ndarray
+        Relative errors of eigenvalues for different discretization sizes.
+    eigvec_dots_matrix : np.ndarray
+        Dot product differences of eigenvectors for different discretization sizes.
+    sizes : list
+        Discretization sizes corresponding to the rows of the matrices.
+    k : int
+        Number of eigenvalues and eigenvectors analyzed.
+    type : string
+        Value of type of heatmap generated, which can be either "size" or "omega",
+        depending on the kind of scaling we are performing
+
+    Returns
+    -------
+    None
+        Displays heatmaps for eigenvalue and eigenvector errors.
+    """
     # Visualizzazione delle heatmaps
     fig, axes = plt.subplots(1, 2, figsize=(18, 6))
 
@@ -291,14 +568,26 @@ def scaling_heatmap(eigval_errors_matrix, eigvec_dots_matrix, sizes, k):
                 xticklabels=np.arange(1, k+1), yticklabels=sizes)
     axes[0].set_title("Log10 of Errors on Eigenvalues", fontsize=16)
     axes[0].set_xlabel("Eigenvalue Index", fontsize=16)
-    axes[0].set_ylabel("Matrix Size", fontsize=16)
+    if (type == "size"):
+        axes[0].set_ylabel("Matrix Size", fontsize=16)
+    elif (type == "omega"):
+        axes[0].set_ylabel("Omega value", fontsize=16)
+    else:
+        print("Invalid type")
+
+
 
     # Heatmap per il prodotto scalare degli autovettori
     sns.heatmap(np.log10(eigvec_dots_matrix), ax=axes[1], annot=False, cmap="YlOrRd", 
                 xticklabels=np.arange(1, k+1), yticklabels=sizes)
     axes[1].set_title(" Log of Error $|1 - |dot||$ on Eigenvectors", fontsize=16)
     axes[1].set_xlabel("Eigenvector Index", fontsize=16)
-    axes[1].set_ylabel("Matrix Size", fontsize=16)
+    if (type == "size"):
+        axes[0].set_ylabel("Matrix Size", fontsize=16)
+    elif (type == "omega"):
+        axes[0].set_ylabel("Omega value", fontsize=16)
+    else:
+        print("Invalid type")
 
     plt.tight_layout()
     plt.show()
