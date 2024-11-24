@@ -1,0 +1,20 @@
+CONSIDERAZIONI SUI RISULTATI:
+
+T = time_steps * dt
+
+CASO (1): Aumento T mantenendo fisso time_steps (quindi aumento dt)
+
+- Real time evolution: ottengo oscillationi della posizione che sono meno intense (sembra si schiaccino su una retta), e il 
+  periodo di queste oscillazioni diminuisce. A valori grandi di T (circa 1000) iniziamo la posizione aumenta linearmente con il tempo
+
+- Imaginary time: non ottengo questo effetto oscillatorio, o quanto meno, non per questo range di valori di T. forse intorno a T bassi,
+  quindi dt bassi, (circa 10) si inizia a vedere un principio di oscillazione
+
+
+CASO (2): Aumento T mantenedo fisso dt (aumento time_steps)
+
+Ottengo le stesse considerazioni di prima del CASO 1
+
+Se provo ad aumentare il valore di time_steps (con stesso dt) per cercare di notare un qualche moto oscillatorio dall'imaginary time, 
+fallisco: pare non esserci un moto oscillatorio se non estremamente dumped. Mi correggo: anche se zoommo un botto non vedo
+un'oscillazione, è letteralmente lineare
