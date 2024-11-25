@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 import numpy as np
 import os
+from scipy.optimize import curve_fit
 
 
-def plot_average_position(par, avg_position, n, filename):
+def plot_average_position(par, avg_position, n, filename, im_time):
   """
   plot_average_position :
     Plot the average position of the particle over time.
@@ -21,25 +22,34 @@ def plot_average_position(par, avg_position, n, filename):
   None
   """
   output_dir = f"n={n}"
-    
-   # Crea la cartella se non esiste
+
   os.makedirs(output_dir, exist_ok=True)
     
-  # Prepara il percorso completo del file
   full_path = os.path.join(output_dir, filename)
+
+  def oscillatory_fit(t, m):
+
+    return m * t
 
 
   # Compute time array (100 elements)
-  time = np.linspace(0, par.tsim, 100)
+  time = np.linspace(0, par.tsim, len(avg_position))
+
+  popt, _ = curve_fit(oscillatory_fit, time, avg_position, p0=[1.0])
+  fitted_curve = oscillatory_fit(time, *popt)
   
   # Plot
   plt.figure(figsize=(8, 6))
-  plt.plot(time, avg_position, label="Average position $\langle x(t) \\rangle$")
+  plt.plot(time, avg_position, color="blue", label="Average position $\langle x(t) \\rangle$")
+  if (im_time == False):
+    plt.plot(time, fitted_curve, label="Fit", color="red", linestyle="--")
+  
   plt.xlabel("Time (t)", fontsize = 16)
   plt.ylabel("Position (x)", fontsize = 16)
   plt.title("Average position of the particle over time", fontsize = 16)
 #   plt.xlim(4.01,4.03)
 #   plt.ylim(0.297, 0.3025)
+  plt.legend()
 
   plt.grid(True, linestyle="--", alpha=0.7)
 
@@ -50,6 +60,8 @@ def plot_average_position(par, avg_position, n, filename):
 
   # Chiudi la figura per evitare sovrapposizioni
   plt.close()
+
+  return popt, fitted_curve
   
 # ===========================================================================================================
 
@@ -138,3 +150,72 @@ def gif_animation(par, density, potential, avg_position, n, filename='qho_time_e
     
   # Final print statement
   print(f"Animation saved as '{filename}'")
+
+
+def analyze_spectrum(time, diff, filename):
+    """
+    Performs the analysis and generates a plot with two subplots:
+    1. The original average position of the particle over time with a fitted curve.
+    2. The frequency spectrum of the difference between the average position and the fitted curve.
+    
+    Parameters
+    ----------
+    time : np.ndarray
+        The array of time values.
+    avg_position : np.ndarray
+        The average position of the particle at each time step.
+    fitted_curve : np.ndarray
+        The fitted curve to subtract from the average position to calculate the difference.
+    
+    Returns
+    -------
+    None
+    """
+        
+    output_dir = f"Fourier"
+
+    os.makedirs(output_dir, exist_ok=True)
+    
+    full_path = os.path.join(output_dir, filename)
+
+    # Create a figure with two subplots
+    fig, axs = plt.subplots(2, 1, figsize=(8, 8))
+
+    axs[0].plot(time, diff, label="average position", color="blue")
+    axs[0].set_xlabel("Time (t)", fontsize=16)
+    axs[0].set_ylabel("Position (x)", fontsize=16)
+    axs[0].set_title("Average position of the particle with fit", fontsize=16)
+    axs[0].legend()
+    axs[0].grid(True, linestyle="--", alpha=0.7)
+    
+    # Fourier transform analysis for the second subplot
+    # Remove DC component (mean) from the difference signal
+    diff_no_dc = diff - np.mean(diff)
+    
+    # Compute the Fourier transform
+    fft_values = np.fft.fft(diff_no_dc)
+    
+    # Calculate the corresponding frequencies
+    freq = np.fft.fftfreq(len(time), time[1] - time[0])  # Constant time step
+    
+    # Calculate the magnitude of the Fourier transform
+    fft_magnitude = np.abs(fft_values)
+    
+    # Plot the frequency spectrum in the second subplot
+    axs[1].plot(freq[:len(freq)//2], fft_magnitude[:len(freq)//2], color="blue", label="Frequency spectrum")
+    axs[1].set_xlabel("Frequency (Hz)", fontsize=14)
+    axs[1].set_ylabel("Magnitude", fontsize=14)
+    axs[1].set_title("Frequency spectrum of the difference from the fit", fontsize=16)
+    # axs[1].set_xlim(0, 1)  # Limit the frequency axis for better visualization
+    axs[1].legend()
+    axs[1].grid(True, linestyle="--", alpha=0.7)
+    
+    # Show the plot with both subplots
+    plt.tight_layout()
+    
+    plt.savefig(full_path)
+    plt.show()
+
+    plt.close()
+
+    return freq, fft_magnitude

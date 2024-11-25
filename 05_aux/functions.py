@@ -290,3 +290,5 @@ def split_op(par: Param, opr: Operators) -> None:
       jj += 1
 
   return densities, potential, avg_position
+
+
