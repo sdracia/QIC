@@ -1,7 +1,22 @@
-import analytical_solution as anso
-import numpy as np
+###############################################
+## QUANTUM INFORMATION AND COMPUTING 2024/25 ##
+###############################################
 
+# Assignment 5 - TIME-DEPENDENT SCHROEDINGER EQUATION
+
+
+# ===========================================================================================================
+# IMPORT ZONE
+# ===========================================================================================================
+
+import numpy as np
 import debugger as db
+import analytical_solutions as aux
+
+
+# ===========================================================================================================
+# PARAM CLASS
+# ===========================================================================================================
 
 class Param:
   """
@@ -9,10 +24,11 @@ class Param:
     Container for holding all simulation parameters.
   """
   def __init__(self,
-               xmax: float,
+               x_min: float,
+               x_max: float,
                num_x: int,
                tsim: float,
-               num_t : int,
+               num_t: int,
                im_time: bool = False) -> None:
     """
     __init__ : 
@@ -20,8 +36,10 @@ class Param:
 
     Parameters
     ----------
-    xmax : float
-      Maximum spatial value (half the simulation domain).
+    x_min : float
+      Minimum spatial value.
+    x_max : float
+      Maximum spatial value.
     num_x : int
       Number of spatial grid points.
     tsim : float
@@ -32,23 +50,24 @@ class Param:
       Whether to use imaginary time evolution. Default is False.
     """
     # Initialization
-    self.xmax = xmax
+    self.x_min = x_min
+    self.x_max = x_max
     self.num_x = num_x
     self.tsim = tsim
     self.num_t = num_t
     self.im_time = im_time
 
     # Infinitesimal quantities (space, time, momentum)
-    self.dx = 2 * xmax / num_x
+    self.dx = (x_max - x_min) / num_x
     self.dt = tsim / num_t
-    self.dk = np.pi / xmax # defined like 1/x, with a coefficient coming from FT.
-    
-    # Spatial grid
-    self.x = np.arange(-xmax + xmax / num_x, xmax, self.dx)
+    self.dk = 2 * np.pi / (x_max - x_min)
 
-    # Momentum grid -> DONE FOR THE FFT, which wants the frequencies in this order!!!
-    self.k = np.concatenate((np.arange(0, num_x / 2), np.arange(-num_x / 2, 0))) * self.dk
-    
+    # Spatial grid
+    self.x = np.linspace(x_min + 0.5 * self.dx, x_max - 0.5 * self.dx, num_x)
+
+    # Momentum grid -> For FFT, frequencies are in this order
+    self.k = np.fft.fftfreq(num_x, d=self.dx) * 2 * np.pi
+
     # validation check
     self._validate()
 
@@ -59,9 +78,12 @@ class Param:
     """
     if self.num_x <= 0 or self.num_t <= 0:
       db.checkpoint(debug=True, msg1="INITIALIZATION", msg2="ValueError: num_x and num_t must be positive integers.", stop=True)
-    if self.xmax <= 0 or self.tsim <= 0:
+    if self.x_max <= 0 or self.tsim <= 0:
       db.checkpoint(debug=True, msg1="INITIALIZATION", msg2="ValueError: xmax and tsim must be positive values.", stop=True)
       
+      
+# ===========================================================================================================
+# OPERATORS CLASS
 # ===========================================================================================================
 
 class Operators:
@@ -71,7 +93,9 @@ class Operators:
   def __init__(self, 
                res: int, 
                voffset: float = 0, 
-               wfcoffset: float = 0, 
+               wfcoffset: float = 0,
+               omega: float = 1.0,
+               order: int = 2,
                n: int = 0, 
                q0_func=None, 
                par: Param = None) -> None:
@@ -88,6 +112,10 @@ class Operators:
       Offset of the quadratic potential in real space. Default is 0.
     wfcoffset : float, optional
       Offset of the wavefunction in real space. Default is 0.
+    omega : float
+      Angular frequency of the harmonic oscillator. Default is 1.0.
+    order : int
+      Order of the finite difference approximation. Default is 2.
     n : int, optional
       Order of the Hermite polynomial. Default is 0.
     q0_func : callable, optional
@@ -108,13 +136,16 @@ class Operators:
     
     # Store time-dependent offset function (default to no potential if None)
     self.q0_func = q0_func or (lambda t: 0)
+    
+    # Store angular frequency
+    self.omega = omega
 
     # Initialize potential and wavefunction if a Param instance is provided
     if par is not None:
-      self._initialize_operators(par, voffset, wfcoffset, n)
+      self._initialize_operators(par, voffset, wfcoffset, order, n)
       self.calculate_energy(par)
 
-  def _initialize_operators(self, par: Param, voffset: float, wfcoffset: float, n: int) -> None:
+  def _initialize_operators(self, par: Param, voffset: float, wfcoffset: float, order: int, n: int) -> None:
     """
     _initialize_operators: 
       Initialize operators and wavefunction based on the provided parameters.
@@ -127,6 +158,8 @@ class Operators:
       Offset of the quadratic potential in real space.
     wfcoffset : float
       Offset of the wavefunction in real space.
+    order: int
+      Order of the finite difference approximation
     n : int
       Order of the Hermite polynomial.
       
@@ -138,10 +171,11 @@ class Operators:
     q0 = self.q0_func(0)
 
     # Quadratic potential with offset
-    self.V = 0.5 * (par.x - voffset - q0) ** 2
+    self.V = 0.5 * (par.x - voffset - q0) ** 2 * self.omega **2
 
     # Wavefunction based on a harmonic oscillator eigenstate
-    self.wfc = anso.harmonic_wfc(par.x - wfcoffset, n).astype(complex)
+    # self.wfc = aux.harmonic_oscillator_spectrum(par.x - wfcoffset, self.omega, order, n).astype(complex)
+    self.wfc = aux.harmonic_wfc(par.x - wfcoffset, self.omega, n).astype(complex)
 
     # Coefficient for imaginary or real time evolution
     coeff = 1 if par.im_time else 1j
@@ -158,7 +192,7 @@ class Operators:
     Parameters
     ----------
     par : Param
-      Parameters of the simulation
+      Parameters of the simulation.
 
     Returns
     -------
@@ -178,8 +212,9 @@ class Operators:
 
     # Store the energy in the history
     self.energy_history.append(energy_final)
-
-
+    
+# ===========================================================================================================
+    
 def split_op(par: Param, opr: Operators) -> None:
   """
   split_op :
@@ -188,16 +223,18 @@ def split_op(par: Param, opr: Operators) -> None:
   Parameters
   ----------
   par : Param
-    Parameters of the simulation
+    Parameters of the simulation.
   opr : Operators
-    Operators of the simulation
+    Operators of the simulation.
 
   Returns
   -------
-  None
+  densities, potential, avg_position: tuple of np.ndarray
+    Densities, potential and average position arrays, each with 100
+    elements for visualization purposes.
   """
   # Initialize storage
-  results = np.zeros((100, 2 * par.num_x)) # 1st half -> wfc in real space; 2nd half -> wfc in momentum space
+  densities = np.zeros((100, 2 * par.num_x)) # 1st half -> wfc in real space; 2nd half -> wfc in momentum space
   potential = np.zeros((100, par.num_x))
   avg_position = np.zeros(100)
   
@@ -208,7 +245,7 @@ def split_op(par: Param, opr: Operators) -> None:
   for i in range(par.num_t):
     # Update the time-dependent potential V(x, t)
     q0 = opr.q0_func(i * par.dt)
-    opr.V = 0.5 * (par.x - q0) ** 2
+    opr.V = 0.5 * (par.x - q0) ** 2 * opr.omega ** 2
     
     # Update the real space propagator
     coeff = 1 if par.im_time else 1j
@@ -228,19 +265,20 @@ def split_op(par: Param, opr: Operators) -> None:
     # Density for plotting and potential
     density = np.abs(opr.wfc) ** 2
 
-    # Renormalization for imaginary time evolution
+    # Renormalization
     if par.im_time:
       renorm_factor = np.sum(density * par.dx)
       if renorm_factor != 0.0:
         opr.wfc /= np.sqrt(renorm_factor)
+        density = np.abs(opr.wfc) ** 2
       else:
         db.checkpoint(debug=True, msg1=f"RENORMALIZATION WARNING! Renorm factor too small at timestep {i}: {renorm_factor}", stop=False)
 
     # Saves exactly 100 snapshots
     if i % (par.num_t // 100) == 0 and jj < 100:
       # Save wfc in real and momentum space
-      results[jj, 0:par.num_x] = np.real(density)
-      results[jj, par.num_x:2 * par.num_x] = np.abs(np.fft.fft(opr.wfc)) ** 2
+      densities[jj, 0:par.num_x] = np.real(density)
+      densities[jj, par.num_x:2 * par.num_x] = np.abs(np.fft.fft(opr.wfc)) ** 2
       
       # Save potential
       potential[jj, :] = opr.V
@@ -251,4 +289,6 @@ def split_op(par: Param, opr: Operators) -> None:
       # Update jj
       jj += 1
 
-  return results, potential, avg_position
+  return densities, potential, avg_position
+
+
