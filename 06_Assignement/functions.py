@@ -1,6 +1,7 @@
 import numpy as np
 import itertools
 import time
+import sys
 
 
 def initialize_coefficients(N, D, seed, type, init_coeff=None, random_init=False):
@@ -35,7 +36,7 @@ def initialize_coefficients(N, D, seed, type, init_coeff=None, random_init=False
     # Validate coefficients
     try:
         is_valid = validate_coefficients(coefficients, N, D, type)
-        print("Coefficients are valid:", is_valid)
+        # print("Coefficients are valid:", is_valid)
     except ValueError as e:
         print("Validation error:", e)
     
@@ -156,6 +157,8 @@ def comput_time(N_max, D_max, seed, type):
 
     cpu_times_matrix = np.zeros((len(N_sizes), len(D_sizes)))
 
+    bytes_matrix = np.zeros((len(N_sizes), len(D_sizes)))
+
     for idx_1, N_i in enumerate(N_sizes):
 
         for idx_2, D_i in enumerate(D_sizes):
@@ -163,16 +166,46 @@ def comput_time(N_max, D_max, seed, type):
             start_time = time.time()
             
             coefficients = initialize_coefficients(N_i, D_i, seed, type, random_init=True)  # Use random initialization
-            separable_state = create_state(N_i, D_i, coefficients, type)
+            state = create_state(N_i, D_i, coefficients, type)
 
             end_time = time.time()
+
+            N_bytes = state.nbytes
 
             # Store the elapsed time in the matrix
             elapsed_time = end_time - start_time
             cpu_times_matrix[idx_1, idx_2] = elapsed_time
+            bytes_matrix[idx_1, idx_2] = N_bytes
     
 
-    return N_sizes, D_sizes, cpu_times_matrix
+    return N_sizes, D_sizes, cpu_times_matrix, bytes_matrix
+
+
+# def compute_time_dependency(N_max, D, seed, type):
+
+#     N_min = 1
+#     N_step = 1
+
+#     N_sizes = list(range(N_min, N_max, N_step))
+
+#     cpu_times_vector = np.zeros(len(N_sizes))
+
+#     for idx_1, N_i in enumerate(N_sizes):
+
+#         # print(N_i, " ", D_i)
+#         start_time = time.time()
+            
+#         coefficients = initialize_coefficients(N_i, D, seed, type, random_init=True)  # Use random initialization
+#         separable_state = create_state(N_i, D, coefficients, type)
+
+#         end_time = time.time()
+
+#         # Store the elapsed time in the matrix
+#         elapsed_time = end_time - start_time
+#         cpu_times_vector[idx_1] = elapsed_time
+    
+
+#     return N_sizes, cpu_times_vector
 
 
 
