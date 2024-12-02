@@ -128,3 +128,71 @@ def test_general_state_bell():
     expected_rdm = np.array([[0.5, 0], [0, 0.5]])  # Same for both left and right
     assert_equal(rdm_left, expected_rdm)
     assert_equal(rdm_right, expected_rdm)
+
+
+def test_general_state_single_nonzero():
+    """
+    Test a general state with a single non-zero component |psi> = |11>
+    """
+    print("### TEST: General State Single Non-Zero Component ###")
+    N = 2
+    D = 2
+    init_coeff = [0, 0, 0, 1]  # Only |11> is non-zero
+    type="general"
+    seed = 12345
+
+    # Generate wavefunction
+    coefficients = fu.initialize_coefficients(N, D, seed, type, init_coeff, random_init=False)
+    psi = fu.create_state(N, D, coefficients, type)
+    
+    # Expected result
+    expected_psi = np.array([0, 0, 0, 1])  # |11>
+    assert_equal(psi, expected_psi)
+
+    # Generate density matrix
+    rho = rh.rho(psi)
+    expected_rho = np.outer(expected_psi, np.conj(expected_psi))
+    assert_equal(rho, expected_rho)
+
+    # Reduced density matrices
+    rdm_left = rh.get_reduced_density_matrix(psi, D, N, [0])
+    rdm_right = rh.get_reduced_density_matrix(psi, D, N, [1])
+    expected_rdm = np.array([[0, 0], [0, 1]])  # For both left and right subsystems
+    assert_equal(rdm_left, expected_rdm)
+    assert_equal(rdm_right, expected_rdm)
+
+
+def test_separable_state_equal_superposition():
+    """
+    Test separable state with equal superposition for both subsystems
+    |psi> = (|0> + |1>) ⊗ (|0> + |1>) / 2
+    """
+    print("### TEST: Separable State Equal Superposition ###")
+    N = 2
+    D = 2
+    init_coeff = [
+        np.array([1/np.sqrt(2), 1/np.sqrt(2)]),  # Subsystem 1 (|0> + |1>) / sqrt(2)
+        np.array([1/np.sqrt(2), 1/np.sqrt(2)])   # Subsystem 2 (|0> + |1>) / sqrt(2)
+    ]
+    seed = 12345
+    type = "separable"
+
+    # Generate wavefunction
+    coefficients = fu.initialize_coefficients(N, D, seed, type, init_coeff, random_init=False)
+    psi = fu.create_state(N, D, coefficients, type)
+    
+    # Expected result
+    expected_psi = np.array([0.5, 0.5, 0.5, 0.5])  # |psi>
+    assert_equal(psi, expected_psi)
+
+    # Generate density matrix
+    rho = rh.rho(psi)
+    expected_rho = np.outer(expected_psi, np.conj(expected_psi))
+    assert_equal(rho, expected_rho)
+
+    # Reduced density matrices
+    rdm_left = rh.get_reduced_density_matrix(psi, D, N, [0])
+    rdm_right = rh.get_reduced_density_matrix(psi, D, N, [1])
+    expected_rdm = np.array([[0.5, 0.5], [0.5, 0.5]])  # Same for both left and right
+    assert_equal(rdm_left, expected_rdm)
+    assert_equal(rdm_right, expected_rdm)
