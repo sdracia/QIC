@@ -6,15 +6,21 @@ import functions as fu
 
 def assert_equal(actual, expected, tol=1e-10):
     """
-    Assert that two matrices or vectors are equal within a tolerance.
+    Compares two matrices or vectors for equality within a specified tolerance.
 
-    Parameters:
-        actual (np.array): The actual result from the function.
-        expected (np.array): The expected result to compare against.
-        tol (float): The tolerance for numerical comparison. Default is 1e-10.
-    
-    Raises:
-        AssertionError: If the matrices or vectors are not equal within the tolerance.
+    Parameters
+    ----------
+    actual : np.array
+        The actual result obtained from a function.
+    expected : np.array
+        The expected result to compare against.
+    tol : float, optional
+        The numerical tolerance for comparison. Default is 1e-10.
+
+    Raises
+    ------
+    AssertionError
+        If the matrices or vectors differ by more than the specified tolerance.
     """
     if not np.allclose(actual, expected, atol=tol):
         raise AssertionError(f"Test failed!\nActual:\n{actual}\nExpected:\n{expected}")
@@ -24,7 +30,12 @@ def assert_equal(actual, expected, tol=1e-10):
 
 def test_separable_state_simple():
     """
-    Test separable state with simple coefficients |psi> = |0>|0>
+    Validates the construction of a simple separable state |ψ⟩ = |0⟩|0⟩.
+
+    Checks include:
+    - Correct wavefunction generation.
+    - Accuracy of the full density matrix.
+    - Correctness of reduced density matrices for subsystems.
     """
     print("### TEST: Separable State Simple ###")
     N = 2  # Number of subsystems
@@ -62,7 +73,12 @@ def test_separable_state_simple():
 
 def test_separable_state_combination():
     """
-    Test separable state with combination coefficients |psi> = |0> (|0> + |1>) / sqrt(2)
+    Validates a separable state with a superposition: |ψ⟩ = |0⟩ ⊗ (|0⟩ + |1⟩)/sqrt(2).
+
+    Checks include:
+    - Proper handling of superposition in wavefunction generation.
+    - Accuracy of the full density matrix.
+    - Correctness of reduced density matrices for subsystems.
     """
     print("### TEST: Separable State Combination ###")
     N = 2
@@ -99,7 +115,12 @@ def test_separable_state_combination():
 
 def test_general_state_bell():
     """
-    Test Bell state |psi> = (|00> + |11>) / sqrt(2)
+    Validates the entangled Bell state |ψ⟩ = (|00⟩ + |11⟩)/sqrt(2).
+
+    Checks include:
+    - Correct wavefunction generation for an entangled state.
+    - Accuracy of the full density matrix.
+    - Validation of reduced density matrices reflecting maximally mixed states.
     """
     print("### TEST: General State Bell ###")
     N = 2
@@ -132,7 +153,12 @@ def test_general_state_bell():
 
 def test_general_state_single_nonzero():
     """
-    Test a general state with a single non-zero component |psi> = |11>
+    Validates a general state with a single non-zero component: |ψ⟩ = |11⟩.
+
+    Checks include:
+    - Proper wavefunction generation for the sparse state.
+    - Accuracy of the full density matrix.
+    - Correctness of reduced density matrices for subsystems.
     """
     print("### TEST: General State Single Non-Zero Component ###")
     N = 2
@@ -164,8 +190,12 @@ def test_general_state_single_nonzero():
 
 def test_separable_state_equal_superposition():
     """
-    Test separable state with equal superposition for both subsystems
-    |psi> = (|0> + |1>) ⊗ (|0> + |1>) / 2
+    Validates a separable state with equal superposition: |ψ⟩ = (|0⟩ + |1⟩) ⊗ (|0⟩ + |1⟩)/2.
+
+    Checks include:
+    - Proper wavefunction generation with balanced probabilities.
+    - Accuracy of the full density matrix.
+    - Correctness of reduced density matrices reflecting the equal superposition.
     """
     print("### TEST: Separable State Equal Superposition ###")
     N = 2
