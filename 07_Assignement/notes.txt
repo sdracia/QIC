@@ -1,0 +1,69 @@
+3/12/2024
+
+- Quantum Ising Model: 1D
+- N spin 1/2 particles in lattice
+- lambda: parameter to tune --> 2 different regimes
+- i need to diagonalize this object: i expect the GS and the GS properties varying the parameter lambda
+- i would like to plot the eigenvalues i obtain varying lambda
+
+- i need to build the pieces: local field --> need to tensorize it; than the interactions: i-th spin interacts 
+    only with i+1-th
+- open boundary conditions: line or circle for the interactions --> i go with open boundary conditions
+
+- we are working with qubits -> dim(H) = 2^N 
+
+two regimes: 
+- one when lambda=0: classical hamiltonian. eigenstates of simga_i^x are |+> and |->. this are the eigenstate
+    i expect. if i have 2 qubits, i can have the 2 qubits pointing both to the right (energy=J) of on to the right
+    and one to the left (energy=-J). if J<0 coupling is ferromagnetic, if J>0 anti-ferromagnetic.
+    Here im able to compute the GS analytically: each time two nodes interact they provide a J term in the hamiltonian
+    so, energy of the ground state is E_g = -J(N-1). The first excited state is when i change only one (and since
+    if I flip one spin in the middle i change 2) spin in the borders: so E_1st = E_g + J.
+- plot the remormalized energy values: E_i / N.
+- the other regime is lambda=infty. The qubits align with the external field, and the GS will be the classical 
+    one also in this limit. also in this case i know which is the energy of the GS: E_g = -lambda*N, and for the
+    first excited states is obtained flipping one spin.
+
+- in the middle: quantum phase transition, from a disordered phase to an ordered phase. tuning lambda.
+    how to look at? for example observables, like the MAGNETIZATION \sum <sigma_i^z> /N (using tensor product, all-1 identities). 
+    I compute the ENTANGLEMENT, computing
+    the Von Neumann entropy. 
+    i fix the size of my system, i look at the GS, and look at the largest  bipartition of the GS, A and B, 
+    computing the entropy:    S(rho_A) = - Tr [rhoA log rhoA]. 
+    (A).....|.....(B)
+    or if i consider the entanglement between 2 qubits (closest bipartition) i use the Concurrence.
+
+CLONE PART 
+
+USING LOCAL OBSERVABLES
+lambda very large: magnetization is very large.
+lambda very small: magnetization on average is 0
+--> so magnetization is a measurement to see the entanglement, with a plot. The critical point is around 1 (or close, we will see 
+    the point moving). I can do same for magnetization on x, expecting a similar pattern
+Magnetization = called order parameter
+
+ANOTHER OPTION: 
+analytically we saw how to compute the energy of GS and first excited. I can use the energy density gaps: Delta = |E_GS /N - E_1/N|
+there are two phases: this gap reduces close to the critical point. Interesting to see how this gap closes: FIT of Delta as a function
+of lambda. and also i can do the plot for different system sizes on the same plot (how does it scale, like which is the exponent ecc ecc).
+
+CORRELATIONS: 2 POINT CORRELATOR
+- lambda/J very small: <sigma_i^x sigma_i+r> = 1. i plot this correlation as a function of r, and i expect a constant value (lambda very small)
+- lambda/J very large: the same plot i expect it to go to 0. in which way? polynomial, log, exp. see this.
+- lambda and J comparable: close to the critical point: it goes to 0 very slowly, in a different way (quasi-order).
+
+ENTROPY
+(1): fix N. than fix l (number of subsystem, the size of the bypartition): I compute S_l/N. Only close to the critical 
+    point I expect S_l/N = c/3 ln(N/pi sin(pi*l / N)),
+    where c is the so-called central charge (measure the amount of dof in my system, which in the Ising Model should be c=1/2).
+(2): now i concentrate on a fixed portion, namely l=L/2. So, S_L/2 = c/3 ln(N/pi), which can be the function used in the fit.
+
+CODE PART:
+i have to diagonalize: i use the SVD decomposition. reduced density matrix is A. 
+S = - \sum lambda_i^2 log \lambda_i^2, with rho=U lambda V^T
+the lambda_i values are the squares of the values i get from the SVD.
+
+2 situations: separable state (product state), or general state.
+for separable state i should get no entanglement, while for bell state i expect maximally entangled state. 
+
+another way to compute the entanglement: GrSm decomposition.
