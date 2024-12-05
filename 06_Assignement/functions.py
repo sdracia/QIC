@@ -1,7 +1,7 @@
 import numpy as np
 import itertools
 import time
-import sys
+from sys import getsizeof
 
 
 def initialize_coefficients(N, D, seed, type, init_coeff=None, random_init=False):
@@ -295,7 +295,7 @@ def comput_time(N_max, D_max, seed, type):
             end_time = time.time()
 
             # Calculate the memory usage of the generated state in bytes
-            N_bytes = state.nbytes
+            N_bytes = ((state.nbytes + getsizeof(state)))
 
             # Calculate and store the elapsed time for state generation
             elapsed_time = end_time - start_time
