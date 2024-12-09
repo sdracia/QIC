@@ -70,6 +70,10 @@ def test_separable_state_simple():
     assert_equal(rdm_left, expected_rdm)
     assert_equal(rdm_right, expected_rdm)
 
+    print(rho)
+
+    print('\n' ,'\n')
+
 
 def test_separable_state_combination():
     """
@@ -112,6 +116,10 @@ def test_separable_state_combination():
     assert_equal(rdm_left, expected_rdm_left)
     assert_equal(rdm_right, expected_rdm_right)
 
+    print(rho)
+
+    print('\n' ,'\n')
+
 
 def test_general_state_bell():
     """
@@ -150,6 +158,10 @@ def test_general_state_bell():
     assert_equal(rdm_left, expected_rdm)
     assert_equal(rdm_right, expected_rdm)
 
+    print(rho)
+
+    print('\n' ,'\n')
+
 
 def test_general_state_single_nonzero():
     """
@@ -186,6 +198,10 @@ def test_general_state_single_nonzero():
     expected_rdm = np.array([[0, 0], [0, 1]])  # For both left and right subsystems
     assert_equal(rdm_left, expected_rdm)
     assert_equal(rdm_right, expected_rdm)
+
+    print(rho)
+
+    print('\n' ,'\n')
 
 
 def test_separable_state_equal_superposition():
@@ -226,3 +242,7 @@ def test_separable_state_equal_superposition():
     expected_rdm = np.array([[0.5, 0.5], [0.5, 0.5]])  # Same for both left and right
     assert_equal(rdm_left, expected_rdm)
     assert_equal(rdm_right, expected_rdm)
+
+    print(rho)
+
+    print('\n' ,'\n')
