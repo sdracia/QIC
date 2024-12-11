@@ -54,7 +54,7 @@ def ising_hamiltonian(N, l):
     xterm = np.kron(np.eye(2**i), np.kron(s_x, np.kron(s_x, np.eye(2**(N - i - 2)))))
     H_int += xterm
   
-  H = H_int + l * H_nonint
+  H =  l * H_nonint + H_int 
   return H
 
 # ===========================================================================================================
@@ -92,6 +92,39 @@ def diagonalize_ising(N_values, l_values):
       eigenvectors[(N, l)] = eigvec
   
   return eigenvalues, eigenvectors
+
+
+def magnetization_z(N):
+    s_x, _, s_z = pauli_matrices()
+    
+    M_z = np.zeros((2**N, 2**N))
+    for i in range(N):
+        m_term = np.kron(np.eye(2**i), np.kron(s_z, np.eye(2**(N - i - 1))))
+        M_z += m_term
+    
+    M_z = M_z / N
+
+    return M_z
+
+
+def compute_magnetization(N, l_vals):
+    M_z = magnetization_z(N)
+
+    magnetizations = []  
+    ground_states = []
+
+    for l in l_vals:
+        eigval, eigvec = np.linalg.eigh(ising_hamiltonian(N, l))
+
+        ground_state = eigvec[:, 0]
+        magnetization = np.dot(ground_state.conj().T, np.dot(M_z, ground_state))
+
+        ground_states.append(ground_state)
+        magnetizations.append(magnetization)
+
+    return magnetizations
+
+
 
 # ===========================================================================================================
 
