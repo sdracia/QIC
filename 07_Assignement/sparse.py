@@ -164,6 +164,25 @@ def compute_magnetization(N, l_vals):
     return magnetizations
 
 
+def compute_DeltaE(N, l_vals):
+
+    DeltasE = []
+
+    for l in l_vals:
+        H = ising_hamiltonian(N, l)
+
+        # Compute ground state
+        eigval, eigvec = eigsh(H, k=2, which='SA')
+
+        first_eigval = eigval[0]
+        second_eigval = eigval[1]
+
+        delta = np.abs(first_eigval/N - second_eigval/N)
+
+        DeltasE.append(delta)
+
+    return DeltasE
+
 
 def plot_eigenvalues(N_values, l_values, k):
     """
