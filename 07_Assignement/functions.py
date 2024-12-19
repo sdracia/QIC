@@ -95,6 +95,20 @@ def diagonalize_ising(N_values, l_values):
 
 
 def magnetization_z(N):
+    """
+    magnetization_z:
+      Constructs the z-component of the magnetization operator.
+
+    Parameters
+    ----------
+    N : int
+      Number of spins.
+
+    Returns
+    -------
+    M_z : scipy.sparse.csr_matrix
+      Magnetization operator in the z-direction.
+    """
     s_x, _, s_z = pauli_matrices()
     
     M_z = np.zeros((2**N, 2**N))
@@ -108,6 +122,22 @@ def magnetization_z(N):
 
 
 def compute_magnetization(N, l_vals):
+    """
+    compute_magnetization:
+      Computes the magnetization for the ground state of the Ising model.
+
+    Parameters
+    ----------
+    N : int
+      Number of spins.
+    l_vals : list of float
+      Values of the interaction strength l.
+
+    Returns
+    -------
+    magnetizations : list of float
+      Magnetization values for the ground state at different l.
+    """
     M_z = magnetization_z(N)
 
     magnetizations = []  

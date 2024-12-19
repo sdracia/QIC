@@ -173,6 +173,23 @@ def compute_magnetization(N, l_vals):
 
 
 def compute_DeltaE(N, l_vals):
+    """
+    compute_DeltaE:
+      Computes the energy gap (DeltaE) in the Ising model for a range of interaction strengths.
+
+    Parameters
+    ----------
+    N : int
+      Number of spins in the Ising model.
+    l_vals : list or array-like
+      A list of interaction strength values (l) for which the energy gap is computed.
+
+    Returns
+    -------
+    DeltasE : list of floats
+      A list containing the energy gap (DeltaE) for each interaction strength in l_vals.
+
+    """
 
     DeltasE = []
 
@@ -259,17 +276,27 @@ def get_reduced_density_matrix(psi, loc_dim, n_sites, keep_indices,
 
 
 def entropy(N_values, l, loc_dim):
+    """
+    entropy:
+      Computes the entanglement entropy for a range of system sizes in the Ising model.
+
+    Parameters
+    ----------
+    N_values : list or array-like
+      A list of integers representing the system sizes (number of spins).
+    l : float
+      Interaction strength parameter in the Ising model.
+    loc_dim : int
+      Local Hilbert space dimension for each spin (e.g., 2 for spin-1/2 systems).
+    """
 
     entropies = []
 
     for i,N in enumerate(N_values):
         N = int(N)
-        # Costruzione dell'Hamiltoniano
+
         H = ising_hamiltonian(N, l)
-        # H = sp.ising_hamiltonian(N, l_critical[i])
 
-
-        # Calcolo del ground state
         eigval, eigvec = eigsh(H, k=1, which='SA')
         ground_state = eigvec[:, 0]
 
@@ -280,10 +307,8 @@ def entropy(N_values, l, loc_dim):
         rhoA = get_reduced_density_matrix(ground_state, loc_dim, N, keep_indices)
 
 
-        # SVD per ottenere i valori singolari
         U, Lambda, Vh = np.linalg.svd(rhoA, full_matrices=False)
 
-        # Calcolo dell'entropia di entanglement
         entropy = -np.sum(Lambda**2 * np.log(Lambda**2))
         entropies.append(entropy)
 
@@ -310,11 +335,8 @@ def plot_eigenvalues(N_values, l_values, k):
       Values of l, interaction strength.
     k : int
       Number of lowest energy levels to plot.
-
-    Returns
-    ----------
-    None
     """
+
     if not isinstance(k, int) or k <= 0:
         raise ValueError("k must be a positive integer.")
     if not all(k <= 2**N for N in N_values):
