@@ -145,31 +145,31 @@ def real_space_rg(N, l, threshold, d_eff, max_iter=100):
     prev_energy_density = current_energy_density
 
   print(f"Convergence achieved at iteration {iteration}: ε = {current_energy_density}", '\n')
-  print(f"Converged reached for a system with N = {actual_dim} sites, i.e. H.shape = ({2**actual_dim}x{2**actual_dim}), with precision: delta = {delta}")
+  print(f"Converged reached for a system with N = {actual_dim} sites, with precision: delta = {delta}")
 
   return gs_energies_dict, eigvecs[:, 0], deltas_dict, actual_dim
 
 
 # ===========================================================================================================
 
-def update_hamiltonian(N_values, l_values, threshold, max_iter=100):
+def update_hamiltonian(N, l_values, threshold, max_iter=100):
   # Initialize dictionaries to store eigenvalues and eigenvectors
   eigenvalues_dict = {}
-  eigenvectors_dict = {}
+  # eigenvectors_dict = {}
   
-  for N in N_values:
-    print(f"Analysis with N={N}...")
+  # for N in N_values:
+  #   print(f"Analysis with N={N}...")
 
-    for l in l_values:      
-      d_eff = 2**N    
-      eigvals, eigvecs = real_space_rg(N, l, threshold, d_eff, max_iter)  
+  for l in l_values:      
+    d_eff = 2**N    
+    normgs_eigval_dict, eigvec, deltas_dim, actual_dim = real_space_rg(N, l, threshold, d_eff, max_iter)  
       
-      eigenvalues_dict[(2*N, l)] = eigvals
-      eigenvectors_dict[(2*N, l)] = eigvecs
+    eigenvalues_dict[l] = normgs_eigval_dict
+    # eigenvectors_dict[l] = eigvecs
     
-    print("-----------------------------------------")
+  print("-----------------------------------------")
     
-  return eigenvalues_dict, eigenvectors_dict
+  return eigenvalues_dict
 
 
 def plot_dict_N_GSen(eigenvalues, type):
@@ -262,7 +262,7 @@ def magnetization(N, l_vals, eigenvectors):
 
   for l in l_vals:
 
-    ground_state = eigenvectors[(N, l)]
+    ground_state = eigenvectors
 
     # Compute magnetization
     magnetization = ground_state.conj().T @ (M_z @ ground_state)

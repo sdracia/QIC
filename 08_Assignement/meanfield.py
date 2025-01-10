@@ -83,7 +83,6 @@ def diagonalize_ising(actual_dim, l_values, k):
     print(f"Diagonalizing Ising Hamiltonian with N={N} ...")
     
     for l in l_values:
-      print("N = ", N)
       H = ising_hamiltonian(N, l)
       
       # Diagonalize the Hamiltonian
@@ -91,7 +90,7 @@ def diagonalize_ising(actual_dim, l_values, k):
       eigval, eigvec = sp.linalg.eigsh(H, k=k, which='SA')  # Compute the smallest `k` eigenvalues
       eigvec = eigvec.T
         
-      eigenvalues[(N, l)] = eigval / N
+      eigenvalues[(N, l)] = eigval[0] / N
       eigenvectors[(N, l)] = eigvec
   
   return eigenvalues, eigenvectors
