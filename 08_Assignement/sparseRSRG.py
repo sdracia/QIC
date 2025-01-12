@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.sparse as sp
 from scipy.sparse import csr_matrix, kron, eye, diags
 
-import meanfield as mf
+import exactdiago as ex
 
 
 def pauli_matrices():
@@ -54,7 +54,7 @@ def ising_hamiltonian(N, l):
     xterm = sp.kron(sp.identity(2**i, format='csr'), sp.kron(s_x, sp.kron(s_x, sp.identity(2**(N - i - 2), format='csr'))))
     H_int += xterm
   
-  H = H_int + l * H_nonint
+  H = - H_int + l * H_nonint
   return H
 
 # ===========================================================================================================
@@ -122,7 +122,10 @@ def real_space_rg(N, l, threshold, d_eff, max_iter=100):
 
     
     # Compute the current energy density and eigenvectors
+
+
     eigvals, eigvecs = sp.linalg.eigsh(H_2N, k=d_eff, which='SA')
+
     current_energy_density = eigvals[0]/actual_dim
 
 
@@ -191,16 +194,10 @@ def plot_dict_N_GSen(eigenvalues, type):
 
 
 
-
-
-
-
-
-
 def plot_eigenvalues(N_values, l_values, eigenvalues):
   # Loop over the values of N (many plots)
 
-  eigenvalues_mf, _ = mf.diagonalize_ising(N_values, l_values)
+  eigenvalues_mf, _ = ex.diagonalize_ising(N_values, l_values)
 
   for N in N_values:
     plt.figure(figsize=(8, 5))
