@@ -342,8 +342,8 @@ def dmrg(l, m_max, threshold=1e-6, max_iter=100):
     # Update for the next iteration
     prev_energy_density = current_energy_density
       
-    if iteration % 10 == 0:
-      print(f"Starting iteration {iteration} ...")
+    # if iteration % 10 == 0:
+      # print(f"Starting iteration {iteration} ...")
     
   print(f"Reached N = {actual_dim} with precision: delta = {delta}")
   return gs_energies_dict, psi_ground, deltas_dict, actual_dim
