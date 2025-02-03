@@ -286,14 +286,15 @@ class CaH:
 
         state1 = self.state_df.loc[index1]
         state2 = self.state_df.loc[index2]
-        j = state1.j
+        j = state1.j                # ja    
         m1 = state1.m
         m2 = state2.m
-        m1_up = int(m1 - 0.5)
-        m1_down = int(m1 + 0.5)
-        m2_up = int(m2 - 0.5)
+        m1_up = int(m1 - 0.5)       # è mj = m - 1/2, quindi è l'm per lo stato spin_up, ossia quello con mI = 1/2
+        m1_down = int(m1 + 0.5)     # è mj = m + 1/2, quindi è l'm per lo stato spin_down, ossia quello con mI = -1/2
+        m2_up = int(m2 - 0.5)       # stessa roba per il secondo stato 
         m2_down = int(m2 + 0.5)
 
+        # counter-rotating terms S-?
         coupling_minus = (
             1.0
             / (self.omega_thz - self.omega_0_thz)
@@ -302,6 +303,7 @@ class CaH:
                 + state1.spin_down * state2.spin_up * j_coupling(j, j + 1, m1_down, m2_up, qa, qb)
                 + state1.spin_up * state2.spin_down * j_coupling(j, j + 1, m1_up, m2_down, qa, qb)
                 + state1.spin_up * state2.spin_up * j_coupling(j, j + 1, m1_up, m2_up, qa, qb)
+
                 + state1.spin_down * state2.spin_down * j_coupling(j, j - 1, m1_down, m2_down, qa, qb)
                 + state1.spin_down * state2.spin_up * j_coupling(j, j - 1, m1_down, m2_up, qa, qb)
                 + state1.spin_up * state2.spin_down * j_coupling(j, j - 1, m1_up, m2_down, qa, qb)
@@ -309,6 +311,7 @@ class CaH:
             )
         )
 
+        # co-rotating terms S+? because i'm exchanging qb and qa. cammino inverso: prima qb e poi qa
         coupling_plus = (
             1.0
             / (self.omega_0_thz + self.omega_thz)
@@ -317,6 +320,7 @@ class CaH:
                 + state1.spin_down * state2.spin_up * j_coupling(j, j + 1, m1_down, m2_up, qb, qa)
                 + state1.spin_up * state2.spin_down * j_coupling(j, j + 1, m1_up, m2_down, qb, qa)
                 + state1.spin_up * state2.spin_up * j_coupling(j, j + 1, m1_up, m2_up, qb, qa)
+
                 + state1.spin_down * state2.spin_down * j_coupling(j, j - 1, m1_down, m2_down, qb, qa)
                 + state1.spin_down * state2.spin_up * j_coupling(j, j - 1, m1_down, m2_up, qb, qa)
                 + state1.spin_up * state2.spin_down * j_coupling(j, j - 1, m1_up, m2_down, qb, qa)
@@ -324,6 +328,7 @@ class CaH:
             )
         )
 
+        # non capisco il fattore di divisione --> il risultato è una media pesata
         return (coupling_minus + coupling_plus) / (1.0 / (self.omega_thz - self.omega_0_thz) + 1.0 / (self.omega_0_thz + self.omega_thz))
 
     def plot_zeeman_levels(self, j: int):
