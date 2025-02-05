@@ -160,7 +160,7 @@ class CaH:
             rotation_energy_ghz = self.br_ghz * j * (j + 1)
             # state_list = []
 
-            zeeman_edge_minus = (gj * j + gI / 2) * self.cb_khz + cij * j / 2
+            zeeman_edge_minus = (gj * j + gI / 2) * self.cb_khz - cij * j / 2
             zeeman_edge_plus = -(gj * j + gI / 2) * self.cb_khz - cij * j / 2
 
             xi = False  # calculate xi = - states
@@ -329,6 +329,8 @@ class CaH:
         )
 
         # non capisco il fattore di divisione --> il risultato è una media pesata
+        # return (coupling_minus + coupling_plus)
+
         return (coupling_minus + coupling_plus) / (1.0 / (self.omega_thz - self.omega_0_thz) + 1.0 / (self.omega_0_thz + self.omega_thz))
 
     def plot_zeeman_levels(self, j: int):
