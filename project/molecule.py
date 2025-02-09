@@ -19,18 +19,14 @@ gI = physical_constants["proton g factor"][0]
 class CaH:
     name: str = "CaH"
     """name of the molecule"""
-    # IMPROVE WITH LIST
+    
     gj: float = -1.36
     """g factor for J"""
-    # IMPROVE WITH LIST
+    
     cij_khz: float = 8.52   # kHz
     """coupling strength between proton spin and molecule rotation, in kHz"""
 
-    # gj_list: list[float] = [-1.35, -1.35, -1.35, -1.34, -1.34, -1.34, -1.34, -1.34, -1.33, -1.33, -1.33, -1.32, -1.32, -1.31, -1.31]
-
-    # cij_list: list[float] = [8.27, 8.26, 8.26, 8.26, 8.26, 8.25, 8.25, 8.24, 8.24, 8.23, 8.22, 8.21, 8.20, 8.19, 8.18]
     br_ghz: float = 142.5017779
-    # br_ghz: float = 144.0   #GHz
     """rotational constant, in Hz"""
     omega_0_thz: float = 750.0      # THz
     """frequency of the electronic transition between ground state and 1st excited state, in THz"""
@@ -92,8 +88,7 @@ class CaH:
         states_file = Path(f"molecule_data/{cls.name}_B[{b_field_gauss:.2f}]_Jmax[{j_max}]_states.csv")
         transitions_file = Path(f"molecule_data/{cls.name}_B[{b_field_gauss:.2f}]_Jmax[{j_max}]_transitions.csv")
 
-        # IMPROVE: maybe better to create a function that creates and another one which reads, in order to avoid confusion.
-        # Because if i modify the molecule levels and so the dataframe maybe it brings errors
+
         if states_file.exists() and transitions_file.exists():
             new_instance.state_df = pd.read_csv(states_file)
             new_instance.transition_df = pd.read_csv(transitions_file)
@@ -346,14 +341,12 @@ class CaH:
         colors = spin_up**2 - spin_down**2
 
         fig, ax = plt.subplots(figsize=(12, 8))
-        # ax.scatter(m, energies, marker="_", c=colors, cmap="plasma", s=500, linewidths=5)
         for mi, ei, ci in zip(m, energies, colors):
             ax.hlines(ei, mi - 0.3, mi + 0.3, colors=plt.cm.plasma(ci), linewidth=3)
 
         ax.set_xlabel("m")
         ax.set_ylabel("Zeeman energy (kHz)")
         ax.set_title(f"Zeeman energies of all states in j={j}, B={self.b_field_gauss} G")
-        # fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=-1, vmax=1), cmap="plasma"), ax=ax)
 
         cbar = fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=-1, vmax=1), cmap="plasma"), ax=ax)
         cbar.set_label("spin")
@@ -378,7 +371,6 @@ class CaH:
                 xytext=(float(m1), float(energy1)),
                 arrowprops=dict(arrowstyle='<->', color='gray', lw=1)
             )
-            # ax.arrow(float(m1), float(energy1), -1.0, float(energy_diff), head_width=0.1, head_length=0.3, linestyle="-", color="gray", length_includes_head=True)
             # add the energy difference as text on the arrow
             ax.text((3*m1 + m2) / 4.0 -0.5, (3*energy1 + energy2) / 4.0, f"{energy_diff:.2f} kHz", fontsize=8, color="gray")
             # add the coupling strength as text on the arrow
@@ -397,7 +389,6 @@ class CaH:
         B_values = np.linspace(b_start, b_stop, num_points) 
         J_values = np.linspace(j_start, j_stop, num_points) 
 
-        # Crea le griglie di B e J
         B, J = np.meshgrid(B_values, J_values)
 
         cb = mu_N * B * 1e-4 / h / 1e3
@@ -410,7 +401,7 @@ class CaH:
         F = 1 - h0
 
         plt.figure(figsize=(8, 6))
-        c = plt.contourf(J, B, F, 200, cmap='viridis', vmin=0, vmax=1)  # Imposta il range della colorbar tra 0 e 1
+        c = plt.contourf(J, B, F, 200, cmap='viridis', vmin=0, vmax=1)  
         plt.colorbar(c, label='F')
         plt.xlabel('J')
         plt.ylabel('B')
