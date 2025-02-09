@@ -32,9 +32,10 @@ class CaH:
     """frequency of the electronic transition between ground state and 1st excited state, in THz"""
     omega_thz: float = 285.5        # THz
     """frequency of the Raman beam, in THz"""
+
     # IMPROVE: MAYBE BETTER REMOVAL
     coupling_coefficient: float = 1.
-    """coupling coefficient, for now to be able to compare with the NIST value"""
+    """coupling coefficient"""
 
     # CONSTRUCTOR
     def __init__(self, b_field_gauss: float, j_max: int, gj_list: list[float] = None, cij_list: list[float] = None) -> None:
@@ -45,8 +46,8 @@ class CaH:
         """maximum j value to consider"""
 
         self.gj_list = gj_list if gj_list is not None else []
-
         self.cij_list = cij_list if cij_list is not None else []
+        """If the lists exist, they are taken as gj and cij for different j's, otherwise the single value is considered"""
 
         if self.gj_list and self.cij_list:
             if len(self.gj_list) != (j_max +1) or len(self.cij_list) != (j_max +1):
@@ -148,15 +149,16 @@ class CaH:
         for i,j in enumerate(range(self.j_max + 1)):
 
             gj = self.gj_list[i] if self.gj_list != [] else self.gj
-
             cij = self.cij_list[i] if self.gj_list != [] else self.cij_khz
+            """If the lists exist, they are taken as gj and cij for different j's, otherwise the single value is considered"""
 
 
             rotation_energy_ghz = self.br_ghz * j * (j + 1)
-            # state_list = []
-
+            
+            
             zeeman_edge_minus = (gj * j + gI / 2) * self.cb_khz - cij * j / 2
             zeeman_edge_plus = -(gj * j + gI / 2) * self.cb_khz - cij * j / 2
+            """j-independent energies for the edge states"""
 
             xi = False  # calculate xi = - states
             for m in self.m_csi_minus(j):
@@ -195,8 +197,7 @@ class CaH:
 
                     state_list.append([j, float(m), xi, spin_up, spin_down, zeeman_energy_khz, rotation_energy_ghz])
 
-            # self.state_df = pd.concat([self.state_df, pd.DataFrame(state_list, columns=self.state_df_columns)], ignore_index=True)
-        
+        """state dataframe"""
         self.state_df = pd.DataFrame(state_list, columns=self.state_df_columns)
 
     def init_transition_dataframe(self):
@@ -206,22 +207,25 @@ class CaH:
         transition_list = []
 
         for j in range(self.j_max + 1):
+            """I take the molecule states at given j, and calculate molecule transitions for those, in a proper order"""
             states_in_j = self.state_df.loc[self.state_df["j"] == j]
             states_index = states_in_j.index.to_numpy()
             states_array = states_in_j.to_numpy()
             m_len = 2 * j + 1
-            # transition_list = []
+            
 
             # index1 --> index2
             for index, state1 in enumerate(states_array):
+                "initial state"
                 index1 = states_index[index]
                 m1, xi1, zeeman_energy_khz1 = state1[1], state1[2], state1[5]
 
-                if index == 0:  # no transition from the Xi.minus left edge state
+                if index == 0:  
+                    """no transition from the Xi.minus left edge state"""
                     continue
 
                 if index == 1 or index == m_len:
-                    # the states right next to the Xi.minus left edge state
+                    """the 2 states right next to the Xi.minus left edge state. They only have 1 transition with the left edge state"""
                     index2 = states_index[0]
                     state2 = states_array[0]
                     m2, xi2, zeeman_energy_khz2 = state2[1], state2[2], state2[5]
@@ -230,7 +234,9 @@ class CaH:
                     coupling = self.coupling_coefficient * self.get_raman_coupling(index1, index2, 0, -1)
                     transition_list.append([j, m1, xi1, m2, xi2, index1, index2, energy_diff, coupling])
                     continue
-
+                
+                """For all the other states I have two transitions: one on the same value of csi, one on the opposite value of csi"""
+                """Same value of csi"""
                 index2 = states_index[index - 1]
                 state2 = states_array[index - 1]
                 m2, xi2, zeeman_energy_khz2 = state2[1], state2[2], state2[5]
@@ -238,6 +244,7 @@ class CaH:
                 coupling = self.coupling_coefficient * self.get_raman_coupling(index1, index2, 0, -1)
                 transition_list.append([j, m1, xi1, m2, xi2, index1, index2, energy_diff, coupling])
 
+                """Opposite value of csi (depending on which csi has the initial state)"""
                 if xi1:  # Xi.plus
                     index2 = states_index[index - m_len]
                     state2 = states_array[index - m_len]
@@ -253,8 +260,7 @@ class CaH:
                     coupling = self.coupling_coefficient * self.get_raman_coupling(index1, index2, 0, -1)
                     transition_list.append([j, m1, xi1, m2, xi2, index1, index2, energy_diff, coupling])
 
-            # self.transition_df = pd.concat([self.transition_df, pd.DataFrame(transition_list, columns=self.transition_df_columns)], ignore_index=True)
-
+        """Transition Dataframe is built following this specific order of calculations"""
         self.transition_df = pd.DataFrame(transition_list, columns=self.transition_df_columns)
 
     def get_raman_coupling(self, index1, index2, qa, qb):
@@ -264,32 +270,48 @@ class CaH:
         Detuning and the electronic transition term is not considered.
         """
 
+
         def j_coupling(j, j_exc, mj1, mj2, qa, qb) -> float:
+            """
+            Function which computes the coupling coefficients based on the selection rules on j and m.
+            Input parameters: 
+            - j: the value of j of the initial and final state of the transition (both states belong to the same manifold)
+            - j_exc: excited value of j due to the Raman beam. It can be j+1 or j-1
+            - mj1: projection of rotational angular momentum for initial level
+            - mj2: projection of rotational angular momentum for final level
+            - qa: polarization of the first beam
+            - qb: polarization of the second beam
+            """
             if j < 0 or j_exc < 0:
                 return 0
             if j < abs(mj1) or j < abs(mj2) or j_exc < abs(mj1 + qa):
                 return 0
             return (
-                np.sqrt((2 * j_exc + 1) / (2 * j + 1))
+                np.sqrt((2 * j_exc + 1) / (2 * j + 1))      # """First transition: initial --> excited """
                 * clebsch_gordan(1, 0, j_exc, 0, j, 0)
-                * clebsch_gordan(1, -qa, j_exc, mj1 + qa, j, mj1)   # andata
+                * clebsch_gordan(1, -qa, j_exc, mj1 + qa, j, mj1)   
 
-                * np.sqrt((2 * j + 1) / (2 * j_exc + 1))            # ritorno
+                * np.sqrt((2 * j + 1) / (2 * j_exc + 1))    # """Second transition: excited --> final"""  
                 * clebsch_gordan(1, 0, j, 0, j_exc, 0)
                 * clebsch_gordan(1, -qb, j, mj2, j_exc, mj1 + qa)
             )
 
+
         state1 = self.state_df.loc[index1]
         state2 = self.state_df.loc[index2]
-        j = state1.j                # ja    
-        m1 = state1.m
+        j = state1.j                  
+        m1 = state1.m               
         m2 = state2.m
         m1_up = int(m1 - 0.5)       # è mj = m - 1/2, quindi è l'm per lo stato spin_up, ossia quello con mI = 1/2
         m1_down = int(m1 + 0.5)     # è mj = m + 1/2, quindi è l'm per lo stato spin_down, ossia quello con mI = -1/2
-        m2_up = int(m2 - 0.5)       # stessa roba per il secondo stato 
+        m2_up = int(m2 - 0.5)       # stessa cosa per il secondo stato 
         m2_down = int(m2 + 0.5)
 
-        # counter-rotating terms S-?
+        # counter-rotating terms S-
+        """
+        Counter-rotating terms S- : I consider all combinations of spin_up and spin_down between first and second states.
+        Then it is weighted according to the formula in Chou et al. 
+        """
         coupling_minus = (
             1.0
             / (self.omega_thz - self.omega_0_thz)
@@ -306,7 +328,11 @@ class CaH:
             )
         )
 
-        # co-rotating terms S+? because i'm exchanging qb and qa. cammino inverso: prima qb e poi qa
+        """
+        co-rotating terms S+ : I consider all combinations of spin_up and spin_down between first and second states.
+        The path is inversed: initial polarization is qa, second polarization is qb
+        Then it is weighted according to the formula in Chou et al. 
+        """
         coupling_plus = (
             1.0
             / (self.omega_0_thz + self.omega_thz)
@@ -323,9 +349,8 @@ class CaH:
             )
         )
 
-        # non capisco il fattore di divisione --> il risultato è una media pesata
-        # return (coupling_minus + coupling_plus)
 
+        """The result is a weighted mean of the co-rotating and counter-rotating terms"""
         return (coupling_minus + coupling_plus) / (1.0 / (self.omega_thz - self.omega_0_thz) + 1.0 / (self.omega_0_thz + self.omega_thz))
 
     def plot_zeeman_levels(self, j: int):
