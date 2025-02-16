@@ -27,13 +27,13 @@ class CaH:
     """coupling strength between proton spin and molecule rotation, in kHz"""
 
     br_ghz: float = 142.5017779
-    """rotational constant, in Hz"""
+    """rotational constant, in GHz"""
+    
     omega_0_thz: float = 750.0      # THz
-    """frequency of the electronic transition between ground state and 1st excited state, in THz"""
+    """frequency of the vibrational transition between ground state and 1st excited state, in THz"""
     omega_thz: float = 285.5        # THz
     """frequency of the Raman beam, in THz"""
 
-    # IMPROVE: MAYBE BETTER REMOVAL
     coupling_coefficient: float = 1.
     """coupling coefficient"""
 
@@ -95,9 +95,6 @@ class CaH:
             new_instance.transition_df = pd.read_csv(transitions_file)
         else:
             print("The molecule data do not exist.'\n' Create the new molecule with class method create_molecule_data")
-            # new_instance.init_states()
-            # new_instance.init_transition_dataframe()
-            # new_instance.save_data()
         return new_instance
 
     @classmethod
@@ -140,8 +137,6 @@ class CaH:
         For each J, first Xi.minus and then Xi.plus states.
         The states of each Xi manifold are listed in the order of m values, starting from the lowest m to the highest m.
         """
-        # IMPROVE: forse si può ottimizzare molto perchè faccio due loop su m. però bisogna stare molto attenti.
-
         # In order to minimize the overheads and improve the efficiency for the creation of the dataframe i compute it here
 
         state_list = []
@@ -152,9 +147,7 @@ class CaH:
             cij = self.cij_list[i] if self.gj_list != [] else self.cij_khz
             """If the lists exist, they are taken as gj and cij for different j's, otherwise the single value is considered"""
 
-
             rotation_energy_ghz = self.br_ghz * j * (j + 1)
-            
             
             zeeman_edge_minus = (gj * j + gI / 2) * self.cb_khz - cij * j / 2
             zeeman_edge_plus = -(gj * j + gI / 2) * self.cb_khz - cij * j / 2
@@ -214,9 +207,10 @@ class CaH:
             m_len = 2 * j + 1
             
 
-            # index1 --> index2
+            # index1 <--> index2. They are just the two states involved in the transition, not necessarily the initial and final.
+            # initial and final states are defined by is_minus variable in qls.py
             for index, state1 in enumerate(states_array):
-                "initial state"
+                "1 state"
                 index1 = states_index[index]
                 m1, xi1, zeeman_energy_khz1 = state1[1], state1[2], state1[5]
 
@@ -311,19 +305,21 @@ class CaH:
         """
         Counter-rotating terms S- : I consider all combinations of spin_up and spin_down between first and second states.
         Then it is weighted according to the formula in Chou et al. 
+        Both for J+1 and J-1
+        Combinations of spin_up and spin_down are neglected, since I is conserved in the transition
         """
         coupling_minus = (
             1.0
             / (self.omega_thz - self.omega_0_thz)
             * (
                 state1.spin_down * state2.spin_down * j_coupling(j, j + 1, m1_down, m2_down, qa, qb)
-                + state1.spin_down * state2.spin_up * j_coupling(j, j + 1, m1_down, m2_up, qa, qb)
-                + state1.spin_up * state2.spin_down * j_coupling(j, j + 1, m1_up, m2_down, qa, qb)
+                # + state1.spin_down * state2.spin_up * j_coupling(j, j + 1, m1_down, m2_up, qa, qb)
+                # + state1.spin_up * state2.spin_down * j_coupling(j, j + 1, m1_up, m2_down, qa, qb)
                 + state1.spin_up * state2.spin_up * j_coupling(j, j + 1, m1_up, m2_up, qa, qb)
 
                 + state1.spin_down * state2.spin_down * j_coupling(j, j - 1, m1_down, m2_down, qa, qb)
-                + state1.spin_down * state2.spin_up * j_coupling(j, j - 1, m1_down, m2_up, qa, qb)
-                + state1.spin_up * state2.spin_down * j_coupling(j, j - 1, m1_up, m2_down, qa, qb)
+                # + state1.spin_down * state2.spin_up * j_coupling(j, j - 1, m1_down, m2_up, qa, qb)
+                # + state1.spin_up * state2.spin_down * j_coupling(j, j - 1, m1_up, m2_down, qa, qb)
                 + state1.spin_up * state2.spin_up * j_coupling(j, j - 1, m1_up, m2_up, qa, qb)
             )
         )
@@ -332,19 +328,21 @@ class CaH:
         co-rotating terms S+ : I consider all combinations of spin_up and spin_down between first and second states.
         The path is inversed: initial polarization is qa, second polarization is qb
         Then it is weighted according to the formula in Chou et al. 
+        Both for J+1 and J-1
+        Combinations of spin_up and spin_down are neglected, since I is conserved in the transition
         """
         coupling_plus = (
             1.0
             / (self.omega_0_thz + self.omega_thz)
             * (
                 state1.spin_down * state2.spin_down * j_coupling(j, j + 1, m1_down, m2_down, qb, qa)
-                + state1.spin_down * state2.spin_up * j_coupling(j, j + 1, m1_down, m2_up, qb, qa)
-                + state1.spin_up * state2.spin_down * j_coupling(j, j + 1, m1_up, m2_down, qb, qa)
+                # + state1.spin_down * state2.spin_up * j_coupling(j, j + 1, m1_down, m2_up, qb, qa)
+                # + state1.spin_up * state2.spin_down * j_coupling(j, j + 1, m1_up, m2_down, qb, qa)
                 + state1.spin_up * state2.spin_up * j_coupling(j, j + 1, m1_up, m2_up, qb, qa)
 
                 + state1.spin_down * state2.spin_down * j_coupling(j, j - 1, m1_down, m2_down, qb, qa)
-                + state1.spin_down * state2.spin_up * j_coupling(j, j - 1, m1_down, m2_up, qb, qa)
-                + state1.spin_up * state2.spin_down * j_coupling(j, j - 1, m1_up, m2_down, qb, qa)
+                # + state1.spin_down * state2.spin_up * j_coupling(j, j - 1, m1_down, m2_up, qb, qa)
+                # + state1.spin_up * state2.spin_down * j_coupling(j, j - 1, m1_up, m2_down, qb, qa)
                 + state1.spin_up * state2.spin_up * j_coupling(j, j - 1, m1_up, m2_up, qb, qa)
             )
         )
@@ -450,9 +448,10 @@ class CaOH(CaH):
     """coupling strength between proton spin and molecule rotation, in kHz"""
     br_ghz: float = 10.96    
     """rotational constant, in GHz"""
-    omega_0_thz: float = 1100.0
+    omega_0_thz: float = 118.49
+    # omega_0_thz: float = 1100.0
     """frequency of the electronic transition between ground state and 1st excited state, in THz"""
-    omega_thz: float = 280.0
+    omega_thz: float = 280.1869
     """frequency of the Raman beam, in THz"""
     coupling_coefficient: float = 1.
     """coupling coefficient, for now to be able to compare with the NIST value"""
