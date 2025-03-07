@@ -37,7 +37,13 @@ def get_excitation_probabilities(
     """
     state_exc_probs = np.zeros(len(molecule.state_df))
 
-    detunings = 2 * np.pi * (frequency - molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
+    if is_minus:
+        detunings = 2 * np.pi * (frequency - molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
+    else:
+        detunings = 2 * np.pi * (frequency + molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
+
+
+    # detunings = 2 * np.pi * (frequency - molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
     omegas = rabi_rate_mhz * molecule.transition_df["coupling"].to_numpy(dtype=float)
 
     if dephased:
@@ -120,7 +126,13 @@ def excitation_matrix(
     """
     num_states = len(molecule.state_df)
 
-    detunings = 2 * np.pi * (frequency - molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
+
+    if is_minus:
+        detunings = 2 * np.pi * (frequency - molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
+    else:
+        detunings = 2 * np.pi * (frequency + molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
+
+    # detunings = 2 * np.pi * (frequency - molecule.transition_df["energy_diff"].to_numpy(dtype=float) * 1e-3)
     omegas = rabi_rate_mhz * molecule.transition_df["coupling"].to_numpy(dtype=float)
 
     if dephased:
@@ -154,7 +166,6 @@ def get_thermal_distribution(molecule: Molecule, temperature: float) -> np.ndarr
     rotational_energy_ghz = molecule.state_df["rotation_energy_ghz"].to_numpy()
 
 
-
     state_distribution = np.exp(-h * rotational_energy_ghz * 1e9 / (k * temperature))
 
 
@@ -183,6 +194,8 @@ class States:
             self.dist = get_thermal_distribution(molecule, temperature)
         else:
             self.dist = np.ones(len(molecule.state_df)) / len(molecule.state_df)
+
+        self.molecule.state_df["state_dist"] = self.dist
 
     def j_distribution(self) -> np.ndarray:
         """Returns the distribution of the rotational states"""
