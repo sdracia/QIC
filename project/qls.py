@@ -154,6 +154,24 @@ def excitation_matrix(
     return exc_matrix
 
 
+def apply_pumping(mo1, pump_frequency_mhz, num_pumps, pump_duration_us, pump_rabi_rate_mhz, pump_dephased, coherence_time_us, is_minus):
+    for _ in range(num_pumps):
+        exc_matrix = excitation_matrix(mo1, pump_frequency_mhz, pump_duration_us, pump_rabi_rate_mhz, pump_dephased, coherence_time_us, is_minus).dot(mo1.state_df["state_dist"])
+        mo1.state_df["state_dist"] += exc_matrix
+
+
+        mask = mo1.state_df["state_dist"] < 0
+        if np.abs(sum(exc_matrix)) >= 1e-10:
+            raise ValueError("Error: sum of exc_matrix is not 0")
+
+        if (mo1.state_df["state_dist"].shape) != (exc_matrix.shape):
+            raise ValueError(f"Error: Shape mismatch. state_dist has shape {mo1.state_df['state_dist'].shape}, but exc_matrix has shape {exc_matrix.shape}")
+
+        if np.sum(mask) > 0 : 
+            raise ValueError("Error: state_dist contains negative values")
+
+
+
 def get_thermal_distribution(molecule: Molecule, temperature: float) -> np.ndarray:
     """Returns the thermal distribution for a given temperature
 

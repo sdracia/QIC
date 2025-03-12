@@ -69,7 +69,7 @@ def plot_state_dist(molecule, j):
     state_dist = states_in_j["state_dist"].to_numpy()
     # print(state_dist)
     state_dist = state_dist / np.sum(state_dist)
-    # print(state_dist)
+    print(state_dist)
 
 
 
@@ -124,9 +124,6 @@ plt.rcParams['font.family'] = 'DejaVu Sans'
 
 def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
 
-        
-    vh_cmap="hsv"
-    cmap_shift=0
     
     dataframe = dataframe_molecule[["j", "m", "xi", "state_dist"]].copy()
 
@@ -140,7 +137,7 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
 
             dataframe.loc[dataframe["j"] == j, "state_dist"] = state_dist
 
-
+    # print(dataframe["state_dist"].to_numpy())
 
 
     df_grouped = dataframe.groupby(['j', 'm']).agg({'xi': 'first', 'state_dist': list}).reset_index()
@@ -174,14 +171,28 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
         sq_array[idx_tuple[0], idx_tuple[1]] = state[data_idx]
     
     
-    for i in range(sq_array.shape[0]):
-        for j in range(sq_array.shape[1]):
-            if isinstance(sq_array[i, j], list):
-                sq_array[i, j] = np.array(sq_array[i, j])  # Converte la lista in un array numpy
-                sq_array[i, j] = np.where(np.abs(sq_array[i, j]) < 1e-10, 0, sq_array[i, j])  # Applica l'azzeramento
+    # for i in range(sq_array.shape[0]):
+    #     for j in range(sq_array.shape[1]):
+    #         if isinstance(sq_array[i, j], list):
+    #             sq_array[i, j] = np.array(sq_array[i, j])  # Converte la lista in un array numpy
+    #             sq_array[i, j] = np.where(np.abs(sq_array[i, j]) < 1e-10, 0, sq_array[i, j])  # Applica l'azzeramento
     
     matrix = sq_array
-    
+
+
+    vh_cmap="hsv"
+    cmap_shift=0
+
+    vh_amp = False
+    max_weight = 1
+    ax_facecolor='#D3D3D3'
+    ax_bkgdcolor="white"
+    label_color="k"
+    grid_color="w"
+    grid_bool = True
+    ax_labels_bool=True
+    ax_color='k'
+    ax_facecolor = '#D3D3D3'
     
     cmap = mpl.colormaps.get_cmap(vh_cmap)
     norm = mpl.colors.Normalize(
@@ -189,17 +200,14 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
         vmax=pi + cmap_shift * 2 * pi,
     )
     
-    plt.figure(figsize=(16, 6)) 
+
+    plt.figure(figsize=(16, 8)) 
     # ax_facecolor = '#D3D3D3'
     # # ax = ax if ax is not None else plt.gca()
     ax = plt.gca()
     # ax.patch.set_facecolor(ax_facecolor)
     # ax.set_aspect("equal", "box")
-    
-    vh_amp = False
-    max_weight = 1
-    ax_facecolor='#D3D3D3'
-    ax_bkgdcolor="white"
+
     
     
     for (x, y), w in np.ndenumerate(matrix):
@@ -293,17 +301,10 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
             )
             ax.add_patch(rect)
             
-    ax_facecolor = '#D3D3D3'
     # ax = ax if ax is not None else plt.gca()
     # ax = plt.gca()
     ax.patch.set_facecolor(ax_facecolor)
     ax.set_aspect("equal", "box")
-    
-    label_color="k"
-    grid_color="w"
-    grid_bool = True
-    ax_labels_bool=True
-    ax_color='k'
     
     ax.set_ylim([-0.5, matrix.shape[1] - 0.5])
     ax.set_xlim([-j_max-1, j_max+1])
