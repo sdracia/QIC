@@ -67,7 +67,7 @@ def plot_state_dist(molecule, j):
     energies = states_in_j["zeeman_energy_khz"].to_numpy()
 
     state_dist = states_in_j["state_dist"].to_numpy()
-    # print(state_dist)
+    print(state_dist)
     state_dist = state_dist / np.sum(state_dist)
     print(state_dist)
 
@@ -183,7 +183,7 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
     vh_cmap="hsv"
     cmap_shift=0
 
-    vh_amp = False
+    # vh_amp = False
     max_weight = 1
     ax_facecolor='#D3D3D3'
     ax_bkgdcolor="white"
@@ -218,21 +218,21 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
         #single values: alwasy nan
         if var:
             # print("Ok")
-            if not np.isnan(w):
-                face_color = cmap(norm(np.angle(w)))
-                edge_color = None
+            # if not np.isnan(w):
+            #     face_color = cmap(norm(np.angle(w)))
+            #     edge_color = None
     
-                if not vh_amp:
-                    # if vh_amp is False, then hinton plot has rectangles area ~ norm squared of amplitude
-                    w_plot = abs(w) ** 2
-                else:
-                    # else hinton plot has rectangles ~ norm of amplitude
-                    w_plot = abs(w)
-                size = np.sqrt(w_plot / max_weight)
-            else:
-                size = 1.0
-                face_color = ax_bkgdcolor
-                edge_color = ax_bkgdcolor
+            #     if not vh_amp:
+            #         # if vh_amp is False, then hinton plot has rectangles area ~ norm squared of amplitude
+            #         w_plot = abs(w) ** 2
+            #     else:
+            #         # else hinton plot has rectangles ~ norm of amplitude
+            #         w_plot = abs(w)
+            #     size = np.sqrt(w_plot / max_weight)
+            # else:
+            size = 1.0
+            face_color = ax_bkgdcolor
+            edge_color = ax_bkgdcolor
     
             # print("one", x - size / 2 - j_max, "and two", y - size / 2)
             rect = plt.Rectangle(
@@ -251,12 +251,12 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
                 face_color = "blue"
                 edge_color = "blue"
     
-                if not vh_amp:
-                    # if vh_amp is False, then hinton plot has rectangles area ~ norm squared of amplitude
-                    w_plot = abs(w_false) ** 2
-                else:
+                # if not vh_amp:
+                #     # if vh_amp is False, then hinton plot has rectangles area ~ norm squared of amplitude
+                #     w_plot = abs(w_false) ** 2
+                # else:
                     # else hinton plot has rectangles ~ norm of amplitude
-                    w_plot = abs(w_false)
+                w_plot = abs(w_false)
                 size = np.sqrt(w_plot / max_weight)
             else:
                 size = 1.0
@@ -278,12 +278,12 @@ def heatmap_state_pop(dataframe_molecule, j_max, normalize = True):
                 face_color = "blue"
                 edge_color = "blue"
     
-                if not vh_amp:
-                    # if vh_amp is False, then hinton plot has rectangles area ~ norm squared of amplitude
-                    w_plot = abs(w_true) ** 2
-                else:
+                # if not vh_amp:
+                #     # if vh_amp is False, then hinton plot has rectangles area ~ norm squared of amplitude
+                #     w_plot = abs(w_true) ** 2
+                # else:
                     # else hinton plot has rectangles ~ norm of amplitude
-                    w_plot = abs(w_true)
+                w_plot = abs(w_true)
                 size = np.sqrt(w_plot / max_weight)
             else:
                 size = 1.0
