@@ -7,6 +7,36 @@ from molecule import Molecule
 from molecule import CaOH, CaH, mu_N, gI
 
 
+def apply_noise(value, noise_type, noise_level, seed=None):
+    """Applies noise to a given value with seed control.
+
+    Parameters:
+        value (float): Original value.
+        noise_type (str): Type of noise ('uniform', 'gaussian', or 'normal').
+        noise_level (float): Percentage of error.
+        seed (int, optional): Seed to make the noise reproducible. If None, the noise will be different on each call.
+
+    Returns:
+        float: Value with applied noise.
+    """
+
+    if seed is not None:
+        np.random.seed(seed) 
+
+    if noise_type == "uniform":
+        error = noise_level * value * np.random.uniform(-1, 1)
+    elif noise_type == "gaussian" or noise_type == "normal":
+        error = noise_level * value * np.random.normal(0, 1)
+    else:
+        error = 0
+
+    return value + error
+
+
+####################################################################
+################### PLOTTING FUNCTIONS #############################
+####################################################################
+
 def plot_transitions(molecule: Molecule, text: bool = True):
     
     # I analyze the following transitions at different Js, and in different regimes of B:
@@ -67,9 +97,9 @@ def plot_state_dist(molecule, j):
     energies = states_in_j["zeeman_energy_khz"].to_numpy()
 
     state_dist = states_in_j["state_dist"].to_numpy()
-    print(state_dist)
+    # print(state_dist)
     state_dist = state_dist / np.sum(state_dist)
-    print(state_dist)
+    # print(state_dist)
 
 
 

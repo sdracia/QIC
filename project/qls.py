@@ -3,8 +3,8 @@ from molecule import Molecule
 from scipy.constants import h, k
 from scipy.sparse import csr_array, sparray
 from typing import Tuple, Optional, NamedTuple
-from wigners import clebsch_gordan
-import pandas as pd
+from typing import List, Dict
+import utils as ut
 
 
 class Polarization(NamedTuple):
@@ -21,6 +21,8 @@ def get_excitation_probabilities(
     dephased: bool = False,
     coherence_time_us: float = 100.0,
     is_minus: bool = True,
+    noise_params: Dict[str, Dict[str, float]] = None,
+    seed: int = None
 ) -> np.ndarray:
     """Returns the excitation probabilities for given frequency and other parameters
 
@@ -35,6 +37,19 @@ def get_excitation_probabilities(
     Returns:
         np.ndarray: The excitation probabilities for each state
     """
+
+
+    if noise_params is None:
+        noise_params = {}
+
+    # Applicare rumore separato per ogni parametro se specificato
+    if "frequency" in noise_params:
+        frequency = ut.apply_noise(frequency, noise_params["frequency"]["type"], noise_params["frequency"]["level"], seed)
+    if "rabi_rate" in noise_params:
+        rabi_rate_mhz = ut.apply_noise(rabi_rate_mhz, noise_params["rabi_rate"]["type"], noise_params["rabi_rate"]["level"], seed)
+
+
+
     state_exc_probs = np.zeros(len(molecule.state_df))
 
     if is_minus:
@@ -75,6 +90,8 @@ def get_spectrum(
     dephased: bool = True,
     coherence_time_us: float = 100.0,
     is_minus: bool = True,
+    noise_params: Dict[str, Dict[str, float]] = None,
+    seed: int = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Returns the spectrum for given parameters
 
@@ -92,7 +109,7 @@ def get_spectrum(
     frequencies = np.linspace(-max_frequency_mhz, max_frequency_mhz, scan_points)
     exc_probs = [
         np.dot(
-            get_excitation_probabilities(molecule, frequency, duration_us, rabi_rate_mhz, dephased, coherence_time_us, is_minus),
+            get_excitation_probabilities(molecule, frequency, duration_us, rabi_rate_mhz, dephased, coherence_time_us, is_minus, noise_params, seed),
             state_distribution,
         )
         for frequency in frequencies
@@ -110,6 +127,8 @@ def excitation_matrix(
     dephased: bool = False,
     coherence_time_us: float = 1000.0,
     is_minus: bool = True,
+    noise_params: Dict[str, Dict[str, float]] = None,
+    seed: int = None
 ) -> sparray:
     """Returns the excitation probabilities for given frequency and other parameters
 
@@ -124,6 +143,17 @@ def excitation_matrix(
     Returns:
         np.ndarray: The excitation probabilities for each state
     """
+
+    if noise_params is None:
+        noise_params = {}
+
+    # Applicare rumore separato per ogni parametro se specificato
+    if "frequency" in noise_params:
+        frequency = ut.apply_noise(frequency, noise_params["frequency"]["type"], noise_params["frequency"]["level"], seed)
+    if "rabi_rate" in noise_params:
+        rabi_rate_mhz = ut.apply_noise(rabi_rate_mhz, noise_params["rabi_rate"]["type"], noise_params["rabi_rate"]["level"], seed)
+
+
     num_states = len(molecule.state_df)
 
 
@@ -154,18 +184,33 @@ def excitation_matrix(
     return exc_matrix
 
 
-def apply_pumping(mo1, pump_frequency_mhz, num_pumps, pump_duration_us, pump_rabi_rate_mhz, pump_dephased, coherence_time_us, is_minus):
+
+def apply_pumping(
+    molecule: Molecule,
+    pump_frequency_mhz: float,
+    num_pumps: int,
+    pump_duration_us: float,
+    pump_rabi_rate_mhz: float,
+    pump_dephased: bool = False,
+    coherence_time_us: float = 1000.0,
+    is_minus: bool = True,
+    noise_params: Dict[str, Dict[str, float]] = None,
+    seed: int = None
+) -> None:
+
     for _ in range(num_pumps):
-        exc_matrix = excitation_matrix(mo1, pump_frequency_mhz, pump_duration_us, pump_rabi_rate_mhz, pump_dephased, coherence_time_us, is_minus).dot(mo1.state_df["state_dist"])
-        mo1.state_df["state_dist"] += exc_matrix
 
 
-        mask = mo1.state_df["state_dist"] < 0
+        exc_matrix = excitation_matrix(molecule, pump_frequency_mhz, pump_duration_us, pump_rabi_rate_mhz, pump_dephased, coherence_time_us, is_minus, noise_params, seed).dot(molecule.state_df["state_dist"])
+        molecule.state_df["state_dist"] += exc_matrix
+
+
+        mask = molecule.state_df["state_dist"] < 0
         if np.abs(sum(exc_matrix)) >= 1e-10:
             raise ValueError("Error: sum of exc_matrix is not 0")
 
-        if (mo1.state_df["state_dist"].shape) != (exc_matrix.shape):
-            raise ValueError(f"Error: Shape mismatch. state_dist has shape {mo1.state_df['state_dist'].shape}, but exc_matrix has shape {exc_matrix.shape}")
+        if (molecule.state_df["state_dist"].shape) != (exc_matrix.shape):
+            raise ValueError(f"Error: Shape mismatch. state_dist has shape {molecule.state_df['state_dist'].shape}, but exc_matrix has shape {exc_matrix.shape}")
 
         if np.sum(mask) > 0 : 
             raise ValueError("Error: state_dist contains negative values")
