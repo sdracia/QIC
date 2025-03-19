@@ -49,7 +49,6 @@ def get_excitation_probabilities(
         rabi_rate_mhz = ut.apply_noise(rabi_rate_mhz, noise_params["rabi_rate"]["type"], noise_params["rabi_rate"]["level"], seed)
 
 
-
     state_exc_probs = np.zeros(len(molecule.state_df))
 
     if is_minus:
