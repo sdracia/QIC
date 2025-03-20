@@ -364,7 +364,9 @@ class CaH:
         spin_down = states_in_j["spin_down"].to_numpy()
         colors = spin_up**2 - spin_down**2
 
-        fig, ax = plt.subplots(figsize=(12, 8))
+        dim = 2*j+6
+
+        fig, ax = plt.subplots(figsize=(dim, 8))
         for mi, ei, ci in zip(m, energies, colors):
             ax.hlines(ei, mi - 0.3, mi + 0.3, colors=plt.cm.plasma(ci), linewidth=3)
 
@@ -377,6 +379,11 @@ class CaH:
 
         ax.set_xlim(-j-1, j+1)
         ax.set_xticks([i+0.5 for i in range(-j - 1, j + 1)])
+
+        min = np.min(states_in_j["zeeman_energy_khz"])
+        max = np.max(states_in_j["zeeman_energy_khz"])
+
+        delta = max - min
 
 
         # plot the difference between neibouring states on arrows conecting them
@@ -396,9 +403,9 @@ class CaH:
                 arrowprops=dict(arrowstyle='<->', color='gray', lw=1)
             )
             # add the energy difference as text on the arrow
-            ax.text((3*m1 + m2) / 4.0 -0.5, (3*energy1 + energy2) / 4.0, f"{energy_diff:.2f} kHz", fontsize=8, color="gray")
+            ax.text((3*m1 + m2) / 4.0 -0.5, (3*energy1 + energy2) / 4.0, f"{energy_diff:.2f} kHz", fontsize=10, color="black")
             # add the coupling strength as text on the arrow
-            ax.text((3*m1 + m2) / 4.0 -0.5, (3*energy1 + energy2) / 4.0 - 0.9, f"{coupling:.5f}", fontsize=8, color="red")
+            ax.text((3*m1 + m2) / 4.0 -0.5, (3*energy1 + energy2) / 4.0 - (delta*0.9/30), f"{coupling:.5f}", fontsize=10, color="red")
 
         plt.show()
         plt.close()
